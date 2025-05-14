@@ -2,7 +2,7 @@
   "name": "auto-console-log-by-vallarasu-kanthasamy",
   "displayName": "Auto Console Log By Vallarasu Kanthasamy",
   "description": "Automatically adds console.log statements for all declared variables in JavaScript/TypeScript/React files.",
-  "publisher": "Vallarasu Kanthasamy",
+  "publisher": "VallarasuKanthasamy",
   "icon": "logo.png",
   "version": "0.0.4",
   "engines": {
@@ -11,6 +11,14 @@
   "categories": [
     "Other"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vallarasuk/Auto-Console-Log.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vallarasuk/Auto-Console-Log/issues"
+  },
+  "homepage": "https://github.com/vallarasuk/Auto-Console-Log#readme",
   "activationEvents": [
     "onCommand:auto-console-log-by-vallarasu-kanthasamy.addConsoleLogs"
   ],
