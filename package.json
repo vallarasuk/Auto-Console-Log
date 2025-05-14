@@ -10,10 +10,9 @@
   },
   "categories": [
     "Programming Languages",
-    "Debuggers",
-    "Productivity"
+    "Debuggers"
   ],
-  "keywords": [
+   "keywords": [
     "console.log",
     "logger",
     "debugger",
@@ -31,6 +30,7 @@
     "react developer",
     "console injection",
     "auto log",
+    "productivity",
     "logging utility"
   ],
   "repository": {
