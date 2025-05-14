@@ -4,7 +4,7 @@
   "description": "Automatically adds console.log statements for all declared variables in JavaScript/TypeScript/React files.",
   "publisher": "VallarasuKanthasamy",
   "icon": "logo.png",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "engines": {
     "vscode": "^1.98.0"
   },
@@ -20,13 +20,13 @@
   },
   "homepage": "https://github.com/vallarasuk/Auto-Console-Log#readme",
   "activationEvents": [
-    "onCommand:auto-console-log-by-vallarasu-kanthasamy.addConsoleLogs"
+    "onCommand:extension.addConsoleLogs"
   ],
   "main": "./extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "auto-console-log-by-vallarasu-kanthasamy.addConsoleLogs",
+        "command": "extension.addConsoleLogs",
         "title": "Add Console Logs"
       }
     ],
@@ -54,7 +54,7 @@
     },
     "keybindings": [
       {
-        "command": "auto-console-log-by-vallarasu-kanthasamy.addConsoleLogs",
+        "command": "extension.addConsoleLogs",
         "key": "alt+shift+l",
         "mac": "cmd+alt+shift+l"
       }
