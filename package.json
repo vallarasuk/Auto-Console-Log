@@ -1,15 +1,38 @@
 {
   "name": "auto-console-log-by-vallarasu-kanthasamy",
   "displayName": "Auto Console Log By Vallarasu Kanthasamy",
-  "description": "Automatically adds console.log statements for all declared variables in JavaScript/TypeScript/React files.",
+  "description": "Effortlessly insert console.log statements for all declared variables in JavaScript, TypeScript, and React files. Built for fast debugging and productivity by React Developer Vallarasu Kanthasamy.",
+  "version": "0.0.5",
   "publisher": "VallarasuKanthasamy",
   "icon": "logo.png",
-  "version": "0.0.5",
   "engines": {
     "vscode": "^1.98.0"
   },
   "categories": [
-    "Other"
+    "Programming Languages",
+    "Debuggers",
+    "Productivity"
+  ],
+  "keywords": [
+    "console.log",
+    "logger",
+    "debugger",
+    "debug",
+    "log automation",
+    "javascript",
+    "typescript",
+    "react",
+    "vscode",
+    "vs code extension",
+    "developer tools",
+    "debug tools",
+    "vallarasu",
+    "vallarasu kanthasamy",
+    "react developer",
+    "console injection",
+    "auto log",
+    "productivity",
+    "logging utility"
   ],
   "repository": {
     "type": "git",
@@ -48,7 +71,7 @@
             "warn",
             "error"
           ],
-          "description": "Default log level for console logs."
+          "description": "Set the log level for generated console statements."
         }
       }
     },
