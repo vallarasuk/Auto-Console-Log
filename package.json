@@ -1,0 +1,73 @@
+{
+  "name": "auto-console-log-by-vallarasu-kanthasamy",
+  "displayName": "Auto Console Log By Vallarasu Kanthasamy",
+  "description": "Automatically adds console.log statements for all declared variables in JavaScript/TypeScript/React files.",
+  "publisher": "Vallarasu Kanthasamy",
+  "icon": "logo.png",
+  "version": "0.0.4",
+  "engines": {
+    "vscode": "^1.98.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:auto-console-log-by-vallarasu-kanthasamy.addConsoleLogs"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "auto-console-log-by-vallarasu-kanthasamy.addConsoleLogs",
+        "title": "Add Console Logs"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Auto Console Log By Vallarasu Kanthasamy",
+      "properties": {
+        "autoConsoleLogByVallarasuKanthasamy.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable the extension."
+        },
+        "autoConsoleLogByVallarasuKanthasamy.logLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": [
+            "log",
+            "info",
+            "warn",
+            "error"
+          ],
+          "description": "Default log level for console logs."
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "auto-console-log-by-vallarasu-kanthasamy.addConsoleLogs",
+        "key": "alt+shift+l",
+        "mac": "cmd+alt+shift+l"
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.98.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.25.1"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.23.10",
+    "@babel/traverse": "^7.24.0",
+    "@babel/types": "^7.24.0"
+  }
+}
