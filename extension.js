@@ -11,7 +11,7 @@ function activate(context) {
   ];
 
   const disposable = vscode.commands.registerCommand(
-    "extension.addConsoleLogs", 
+    "extension.addConsoleLogs",
     function () {
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
@@ -47,11 +47,9 @@ function activate(context) {
         const skipPatterns = new Set();
         const loggedVariables = new Set();
 
-        // First pass: Identify skip patterns
         const skipRegex =
           /(?:^|\n)(?:\s*)(?:export\s+)?(?:default\s+|function\s+|class\s+|interface\s+|type\s+|const\s+\[([a-zA-Z_$][\w$]*),\s*set\w+\]\s*=\s*useState|const\s+(\w+)\s*=\s*(?:\(\s*.*\s*\)\s*=>|function)|import\s+(?:\{[^}]*\}|\w+)\s+from|useEffect\s*\(|useReducer\s*\(|useState\s*\(|useContext\s*\(|useRef\s*\(|React.memo\s*\()/g;
 
-        // Second pass: Process variables in current scope
         const varRegex =
           /(?:^|\n)(?:\s*)(const|let|var)\s+([a-zA-Z_$][\w$]*)\s*(?=\s*(?!function\b|\(\s*.*\s*\)\s*=>|\b(useEffect|useReducer|useState|useContext|useRef|React.memo)\b))/g;
 
@@ -69,7 +67,6 @@ function activate(context) {
           const lineNumber = document.positionAt(indexInDoc).line;
           const line = document.lineAt(lineNumber);
 
-          // Skip conditions
           if (
             shouldSkipVariable(
               varName,
@@ -82,12 +79,12 @@ function activate(context) {
             continue;
           }
 
-          // Find insertion position (after the variable declaration)
           const { insertPosition, indent } = getInsertPosition(
             document,
             lineNumber,
             line
           );
+
           const context = getVariableContext(document, lineNumber);
           const logStatement = `${indent}console.log('${context}${varName} ---------------------------->', ${varName});\n`;
 
@@ -141,7 +138,16 @@ function getInsertPosition(document, lineNumber, line) {
   let insertLine = lineNumber + 1;
   while (insertLine < document.lineCount) {
     const nextLine = document.lineAt(insertLine).text.trim();
-    if (nextLine && !nextLine.match(/^(const|let|var)\s/)) break;
+    if (
+      nextLine &&
+      !nextLine.startsWith("const") &&
+      !nextLine.startsWith("let") &&
+      !nextLine.startsWith("var") &&
+      !nextLine.includes(":") &&
+      !nextLine.includes("=")
+    ) {
+      break;
+    }
     insertLine++;
   }
   return {
@@ -202,7 +208,7 @@ function hasConsoleLogInScope(document, lineNumber, varName) {
     if (
       line.includes(`console.log(`) &&
       line.includes(varName) &&
-      !line.includes(`console.log(` + varName + `)`)
+      !line.includes(`console.log(` + varName + `)`) // make sure it's not just a generic check
     ) {
       return true;
     }
@@ -236,17 +242,18 @@ function getVariableContext(document, lineNumber) {
   for (let i = lineNumber; i >= 0; i--) {
     const line = document.lineAt(i).text;
     const funcMatch = line.match(/function\s+([a-zA-Z_$][\w$]*)/);
-    const componentMatch = line.match(/const\s+([A-Z][a-zA-Z_$]*)\s*=/);
-
-    if (funcMatch) return `${funcMatch[1]} > `;
-    if (componentMatch) return `${componentMatch[1]} > `;
+    if (funcMatch) {
+      return funcMatch[1] + " > ";
+    }
+    const constFuncMatch = line.match(/const\s+([a-zA-Z_$][\w$]*)\s*=\s*\(/);
+    if (constFuncMatch) {
+      return constFuncMatch[1] + " > ";
+    }
   }
   return "";
 }
 
-function deactivate() {}
+exports.activate = activate;
 
-module.exports = {
-  activate,
-  deactivate,
-};
+function deactivate() {}
+exports.deactivate = deactivate;
