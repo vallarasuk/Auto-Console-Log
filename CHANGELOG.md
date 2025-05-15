@@ -1,6 +1,6 @@
 # 📦 Change Log
 
-All notable changes to the **Auto Console Log By Vallarasu Kanthasamy** extension will be documented in this file.
+All notable changes to the **Auto Console Log by Vallarasu Kanthasamy** extension will be documented in this file.
 
 This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and uses [Semantic Versioning](https://semver.org/).
 
@@ -8,7 +8,21 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
-- Add planned features or fixes here before release.
+- Add planned features or fixes here before the next release.
+
+---
+
+## [0.0.9] – 2025-05-15
+
+### Added
+
+- **Profile Section in README:** Added personal branding with image, name, and bio.
+- **Before & After Preview Block:** Visually compares code behavior before and after using the extension.
+- **Two-Column Profile Layout:** README now includes a layout with profile image on the left and details on the right.
+
+### Fixed
+
+- **README Formatting Issues:** Fixed HTML structure issues (e.g., broken styles in `<h1>` and layout alignment).
 
 ---
 
@@ -31,7 +45,7 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
-- **Live Usage Examples:** README now includes detailed usage comparisons with the *Turbo Console Log* extension.
+- **Live Usage Examples:** README now includes detailed usage comparisons with the _Turbo Console Log_ extension.
 - **Shortcut Display:** Clearly displays keyboard shortcuts in the README:
   - `Ctrl + Shift + L` (Windows/Linux)
   - `Cmd + Shift + L` (macOS)
