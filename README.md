@@ -37,9 +37,9 @@ No typing, no missing logs — just <strong>supercharged debugging</strong> ⚡
 <h1 align="center" style="margin: 1%;">🖼️ Before & After – See the Magic</h1>
 
 <div style="display: flex; justify-content: center; align-items: center; margin: 40px 0; gap: 25px;">
-  <img src="https://esobjkdsqwmmzhcwvzck.supabase.co/storage/v1/object/public/quotesimages//adio.png" width="35%" alt="Before Code" style="border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);" />
-  <img src="https://img.icons8.com/ios-filled/50/ff6f61/long-arrow-right.png" width="6%" alt="arrow" style="vertical-align: middle;" />
-  <img src="https://esobjkdsqwmmzhcwvzck.supabase.co/storage/v1/object/public/quotesimages//io.png" width="35%" alt="After Code" style="border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);" />
+  <img src="https://esobjkdsqwmmzhcwvzck.supabase.co/storage/v1/object/public/quotesimages//adio.png" width="49%" alt="Before Code" style="border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);" />
+  <img src="https://img.icons8.com/ios-filled/50/ff6f61/long-arrow-right.png" width="3%" alt="arrow" style="vertical-align: middle;" />
+  <img src="https://esobjkdsqwmmzhcwvzck.supabase.co/storage/v1/object/public/quotesimages//io.png" width="49%" alt="After Code" style="border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);" />
 </div>
 
 <blockquote>See the transformation — instantly!</blockquote>
