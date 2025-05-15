@@ -3,7 +3,7 @@
 # Auto Console Log By Vallarasu Kanthasamy
 
 <div style="text-align: center; margin-bottom: 20px;">
-  <img src="./Assets/profileop.png" alt="Vallarasu Kanthasamy" width="80" style="border-radius: 50%; box-shadow: 0 3px 10px rgba(0,0,0,0.1);" />
+  <img src="Assets/profileop.png" alt="Vallarasu Kanthasamy" width="80" style="border-radius: 50%; box-shadow: 0 3px 10px rgba(0,0,0,0.1);" />
   <p style="margin: 8px 0 0; font-weight: bold;">Vallarasu Kanthasamy</p>
 </div>
 
@@ -37,9 +37,9 @@ No typing, no missing logs — just <strong>supercharged debugging</strong> ⚡
 <h1 align="center" style="margin: 1%;">🖼️ Before & After – See the Magic</h1>
 
 <div style="display: flex; justify-content: center; align-items: center; margin: 40px 0; gap: 25px;">
-  <img src="./Assets/adio.png" width="35%" alt="Before Code" style="border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);" />
+  <img src="Assets/adio.png" width="35%" alt="Before Code" style="border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);" />
   <img src="https://img.icons8.com/ios-filled/50/ff6f61/long-arrow-right.png" width="6%" alt="arrow" style="vertical-align: middle;" />
-  <img src="./Assets/io.png" width="35%" alt="After Code" style="border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);" />
+  <img src="Assets/io.png" width="35%" alt="After Code" style="border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);" />
 </div>
 
 <blockquote>See the transformation — instantly!</blockquote>
