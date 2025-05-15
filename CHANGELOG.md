@@ -12,25 +12,47 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.0.8] – 2025-05-15
+
+### Fixed
+
+- **Improved JSX/TSX Support:** Enhanced logic for inserting `console.log()` in complex JSX structures and multiline return blocks.
+- **Scope Bug Fix:** Resolved edge case where `console.log()` was inserted for undeclared or shadowed variables.
+- **Stability Fixes:** Minor internal refactors to avoid duplicate logging and maintain consistent behavior across file types.
+- **Keybinding Conflict Resolution:** Improved compatibility with other extensions that use similar shortcuts.
+
+### Changed
+
+- **Code Cleanup:** Removed redundant conditions and improved performance during large file scans.
+
+---
+
 ## [0.0.7] – 2025-05-15
 
 ### Added
 
-- Updated README with detailed usage examples including live comparison with Turbo Console Log extension.
-- Added prominent and attractive shortcut key display in README (`Ctrl + Shift + L` for Windows/Linux, `Cmd + Shift + L` for macOS).
-- Added useful external links to personal website, ATS Resume Builder, developer PDFs, motivation quotes, reels, and WhatsApp community.
-- Added support for configurable log levels (`log`, `info`, `warn`, `error`) via extension settings.
-- Included keyboard shortcut for instant use (`Ctrl+Shift+L` / `Cmd+Shift+L`).
-- Added ability to auto-insert `console.log()` for declared variables/constants in JS, TS, and React files.
+- **Live Usage Examples:** README now includes detailed usage comparisons with the *Turbo Console Log* extension.
+- **Shortcut Display:** Clearly displays keyboard shortcuts in the README:
+  - `Ctrl + Shift + L` (Windows/Linux)
+  - `Cmd + Shift + L` (macOS)
+- **External Links Section:** Added links to:
+  - Personal website
+  - ATS Resume Builder
+  - 600+ Developer PDF resources
+  - Motivational quotes and reels
+  - WhatsApp community
+- **Log Levels:** Support for configurable log levels: `log`, `info`, `warn`, `error`.
+- **Keyboard Shortcut:** Instant activation via `Ctrl+Shift+L` / `Cmd+Shift+L`.
+- **Variable Detection:** Automatically inserts `console.log()` for declared variables/constants in JavaScript, TypeScript, and React files.
 
 ### Changed
 
-- Default keybinding changed from `Alt+Shift+L` to `Ctrl+Shift+L` for better consistency and user convenience.
+- **Default Keybinding Updated:** Changed from `Alt+Shift+L` to `Ctrl+Shift+L` for improved usability and alignment with common shortcut practices.
 
 ### Fixed
 
-- Fixed bugs related to log insertion in JSX and TSX files.
-- Improved handling of variables declared in nested scopes.
+- **JSX/TSX Bug Fixes:** Resolved issues with log insertion in `.jsx` and `.tsx` files.
+- **Nested Scope Handling:** Improved recognition of variables declared within nested blocks.
 
 ---
 
