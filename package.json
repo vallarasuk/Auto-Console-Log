@@ -42,15 +42,42 @@
   },
   "homepage": "https://github.com/vallarasuk/Auto-Console-Log#readme",
   "activationEvents": [
-    "onCommand:extension.addConsoleLogs"
+    "onCommand:extension.addConsoleLogs",
+    "onCommand:extension.addConsoleLogForSelection",
+    "onCommand:extension.removeConsoleLogs"
   ],
   "main": "./extension.js",
   "contributes": {
     "commands": [
       {
         "command": "extension.addConsoleLogs",
-        "title": "Add Console Logs"
+        "title": "Add Console Logs",
+        "category": "Auto Console Log"
+      },
+      {
+        "command": "extension.addConsoleLogForSelection",
+        "title": "Add Console Log for Selection",
+        "category": "Auto Console Log"
+      },
+      {
+        "command": "extension.removeConsoleLogs",
+        "title": "Remove All Console Logs",
+        "category": "Auto Console Log"
       }
+    ],
+    "keybindings": [
+      {
+        "command": "extension.addConsoleLogs",
+        "key": "ctrl+shift+l",
+        "mac": "cmd+shift+l",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "extension.addConsoleLogForSelection",
+        "key": "ctrl+l",
+        "mac": "cmd+l",
+        "when": "editorTextFocus"
+      } 
     ],
     "configuration": {
       "type": "object",
@@ -73,14 +100,7 @@
           "description": "Set the log level for generated console statements."
         }
       }
-    },
-    "keybindings": [
-      {
-        "command": "extension.addConsoleLogs",
-        "key": "ctrl+shift+l",
-        "mac": "cmd+shift+l"
-      }
-    ]
+    }
   },
   "scripts": {
     "lint": "eslint .",
@@ -101,10 +121,9 @@
     "@babel/types": "^7.24.0"
   },
   "files": [
-  "dist",
-  "media",
-  "README.md",
-  "Assets"
-]
-
+    "dist",
+    "media",
+    "README.md",
+    "Assets"
+  ]
 }
