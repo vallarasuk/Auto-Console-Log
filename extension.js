@@ -31,72 +31,90 @@ function activate(context) {
       }
 
       try {
-        const cursorPosition = editor.selection.active;
-        const functionRange = getFunctionScopeRange(document, cursorPosition);
-
-        if (!functionRange) {
-          vscode.window.showInformationMessage(
-            "Cursor must be inside a function or block to add logs."
-          );
-          return;
-        }
-
-        const functionText = document.getText(functionRange);
-        const fullText = document.getText();
-
+        const selection = editor.selection;
         const edit = new vscode.WorkspaceEdit();
         let hasInsertions = false;
 
-        // Determine variables to skip (imports, hooks, etc)
-        const skipPatterns = extractSkipPatterns(fullText);
-
-        // Track logged variables to avoid duplicates in same run
-        const loggedVariables = new Set();
-
-        // Find variables declared in current function scope
-        const variableNames = extractVariables(functionText);
-
-        for (const varName of variableNames) {
-          // Find variable declaration line number in document
-          const varIndexInFunction = functionText.indexOf(varName);
-          const varDocOffset =
-            document.offsetAt(functionRange.start) + varIndexInFunction;
-          const varPosition = document.positionAt(varDocOffset);
-          const lineNumber = varPosition.line;
-          const line = document.lineAt(lineNumber);
-
-          if (
-            shouldSkipVariable(
-              varName,
-              skipPatterns,
-              loggedVariables,
-              document,
-              lineNumber
-            )
-          ) {
-            continue;
+        // If text is selected, only log that variable
+        if (!selection.isEmpty) {
+          const selectedText = document.getText(selection).trim();
+          if (!isValidVariableName(selectedText)) {
+            vscode.window.showErrorMessage(
+              `"${selectedText}" doesn't appear to be a valid variable name`
+            );
+            return;
           }
 
-          // Compute insertion position after variable declaration ends
+          const lineNumber = selection.start.line;
+          const line = document.lineAt(lineNumber);
+          const contextName = getVariableContext(document, lineNumber);
           const { insertPosition, indent } = getInsertPosition(
             document,
             lineNumber,
             line
           );
 
-          // Get function or context name for log
-          const contextName = getVariableContext(document, lineNumber);
-
-          const logStatement = `${indent}console.log('${contextName}${varName} ---------------------------->', ${varName});\n`;
-
+          const logStatement = `${indent}console.log('${contextName}${selectedText} ---------------------------->', ${selectedText});\n`;
           edit.insert(document.uri, insertPosition, logStatement);
           hasInsertions = true;
-          loggedVariables.add(varName);
+        }
+        // If no text selected, log all variables in scope
+        else {
+          const cursorPosition = editor.selection.active;
+          const functionRange = getFunctionScopeRange(document, cursorPosition);
+
+          if (!functionRange) {
+            vscode.window.showInformationMessage(
+              "Cursor must be inside a function or block to add logs."
+            );
+            return;
+          }
+
+          const functionText = document.getText(functionRange);
+          const fullText = document.getText();
+          const skipPatterns = extractSkipPatterns(fullText);
+          const loggedVariables = new Set();
+          const variableNames = extractVariables(functionText);
+
+          for (const varName of variableNames) {
+            const varIndexInFunction = functionText.indexOf(varName);
+            const varDocOffset =
+              document.offsetAt(functionRange.start) + varIndexInFunction;
+            const varPosition = document.positionAt(varDocOffset);
+            const lineNumber = varPosition.line;
+            const line = document.lineAt(lineNumber);
+
+            if (
+              shouldSkipVariable(
+                varName,
+                skipPatterns,
+                loggedVariables,
+                document,
+                lineNumber
+              )
+            ) {
+              continue;
+            }
+
+            const { insertPosition, indent } = getInsertPosition(
+              document,
+              lineNumber,
+              line
+            );
+            const contextName = getVariableContext(document, lineNumber);
+            const logStatement = `${indent}console.log('${contextName}${varName} ---------------------------->', ${varName});\n`;
+
+            edit.insert(document.uri, insertPosition, logStatement);
+            hasInsertions = true;
+            loggedVariables.add(varName);
+          }
         }
 
         if (!hasInsertions) {
           vscode.window.showInformationMessage(
-            "No meaningful variables found to log in current scope."
+            selection.isEmpty
+              ? "No meaningful variables found to log in current scope."
+              : "Failed to insert console log for selected variable."
           );
           return;
         }
@@ -113,6 +131,13 @@ function activate(context) {
   );
 
   context.subscriptions.push(disposable);
+}
+
+// Helper function to validate selected variable name
+function isValidVariableName(text) {
+  if (!text) return false;
+  // Basic check - should start with letter/underscore/dollar, then alphanumeric
+  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(text);
 }
 
 /**

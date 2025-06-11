@@ -6,17 +6,29 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.1.4] – 2025-06-10
+
+### Added
+
+- ✅ **Single Variable Console Log:**
+  - Added support for logging only the selected single variable
+  - Improved precision and faster log insertion for single selections
+
+---
+
 ## [0.1.3] – 2025-06-10
 
 ### Changed
 
 - 🔧 **Package Update:**
+
   - Incremented version to `0.1.3`
   - Ensured accurate `publisher`, `icon`, and `repository` fields in `package.json`
   - Verified compatibility with VS Code `^1.98.0`
   - Aligned extension keywords and description for better discoverability
 
 - 📁 **Files Field Added:**
+
   - Explicitly listed necessary files (`dist`, `media`, `README.md`, `Assets`) for publishing to the Marketplace
 
 - 🧪 **Script Enhancements:**
