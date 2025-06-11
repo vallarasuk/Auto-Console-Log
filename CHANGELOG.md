@@ -6,6 +6,16 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.1.5] – 2025-06-10
+
+### Added
+
+- ✅ **Single Variable Console Log:**
+  - Bug Fixes related to single variable console log fixed
+
+---
+
+
 ## [0.1.4] – 2025-06-10
 
 ### Added
