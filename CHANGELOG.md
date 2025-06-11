@@ -6,9 +6,21 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
-## [Unreleased]
+## [0.1.3] – 2025-06-10
 
-- Add planned features or fixes here before the next release.
+### Changed
+
+- 🔧 **Package Update:**
+  - Incremented version to `0.1.3`
+  - Ensured accurate `publisher`, `icon`, and `repository` fields in `package.json`
+  - Verified compatibility with VS Code `^1.98.0`
+  - Aligned extension keywords and description for better discoverability
+
+- 📁 **Files Field Added:**
+  - Explicitly listed necessary files (`dist`, `media`, `README.md`, `Assets`) for publishing to the Marketplace
+
+- 🧪 **Script Enhancements:**
+  - Adjusted `test` and `lint` scripts to work seamlessly with VSCE and the updated dependency structure
 
 ---
 
@@ -16,13 +28,13 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
-- **Profile Section in README:** Added personal branding with image, name, and bio.
-- **Before & After Preview Block:** Visually compares code behavior before and after using the extension.
-- **Two-Column Profile Layout:** README now includes a layout with profile image on the left and details on the right.
+- **Profile Section in README:** Personal branding with image, name, and bio
+- **Before & After Preview Block:** Visual comparison of code behavior before and after using the extension
+- **Two-Column Profile Layout:** README layout with profile image on the left and details on the right
 
 ### Fixed
 
-- **README Formatting Issues:** Fixed HTML structure issues (e.g., broken styles in `<h1>` and layout alignment).
+- **README Formatting Issues:** Fixed HTML structure issues (e.g., broken `<h1>` styles and layout alignment)
 
 ---
 
@@ -30,14 +42,14 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Fixed
 
-- **Improved JSX/TSX Support:** Enhanced logic for inserting `console.log()` in complex JSX structures and multiline return blocks.
-- **Scope Bug Fix:** Resolved edge case where `console.log()` was inserted for undeclared or shadowed variables.
-- **Stability Fixes:** Minor internal refactors to avoid duplicate logging and maintain consistent behavior across file types.
-- **Keybinding Conflict Resolution:** Improved compatibility with other extensions that use similar shortcuts.
+- **JSX/TSX Support:** Improved insertion of `console.log()` in complex JSX/multiline return blocks
+- **Scope Bug Fix:** Fixed insertion for undeclared or shadowed variables
+- **Stability:** Prevented duplicate logs, improved consistency across file types
+- **Keybinding Conflicts:** Increased compatibility with other extensions
 
 ### Changed
 
-- **Code Cleanup:** Removed redundant conditions and improved performance during large file scans.
+- **Code Cleanup:** Removed redundant conditions, optimized for large file scans
 
 ---
 
@@ -45,53 +57,53 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Added
 
-- **Live Usage Examples:** README now includes detailed usage comparisons with the _Turbo Console Log_ extension.
-- **Shortcut Display:** Clearly displays keyboard shortcuts in the README:
+- **Live Usage Examples:** Usage comparison with _Turbo Console Log_ in README
+- **Shortcut Display:** Listed shortcuts in README:
   - `Ctrl + Shift + L` (Windows/Linux)
   - `Cmd + Shift + L` (macOS)
-- **External Links Section:** Added links to:
+- **External Links:** Added links to:
   - Personal website
   - ATS Resume Builder
   - 600+ Developer PDF resources
-  - Motivational quotes and reels
+  - Motivational quotes/reels
   - WhatsApp community
-- **Log Levels:** Support for configurable log levels: `log`, `info`, `warn`, `error`.
-- **Keyboard Shortcut:** Instant activation via `Ctrl+Shift+L` / `Cmd+Shift+L`.
-- **Variable Detection:** Automatically inserts `console.log()` for declared variables/constants in JavaScript, TypeScript, and React files.
+- **Log Levels:** Configurable log levels: `log`, `info`, `warn`, `error`
+- **Keyboard Shortcut:** Instant activation with shortcut keys
+- **Variable Detection:** Auto `console.log()` insertion for declared variables
 
 ### Changed
 
-- **Default Keybinding Updated:** Changed from `Alt+Shift+L` to `Ctrl+Shift+L` for improved usability and alignment with common shortcut practices.
+- **Keybinding Update:** Changed from `Alt+Shift+L` to `Ctrl+Shift+L` for usability
 
 ### Fixed
 
-- **JSX/TSX Bug Fixes:** Resolved issues with log insertion in `.jsx` and `.tsx` files.
-- **Nested Scope Handling:** Improved recognition of variables declared within nested blocks.
+- **JSX/TSX Bug Fixes:** Handled log insertion in `.jsx` and `.tsx` correctly
+- **Nested Scope Handling:** Improved variable detection in nested blocks
 
 ---
 
 ## [0.0.6] – 2025-04-15
 
-- Previous patch with README improvements and bug fixes (merged into 0.0.7).
+- Minor README improvements and bug fixes (merged into 0.0.7)
 
 ---
 
 ## [0.0.5] – 2025-04-20
 
-- Fixed bugs related to log insertion in JSX and TSX files.
-- Improved handling of variables declared in nested scopes.
+- Bug fixes for JSX/TSX
+- Improved nested scope detection
 
 ---
 
 ## [0.0.4] – 2025-04-10
 
-- Added support for custom log levels (`log`, `info`, `warn`, `error`) via configuration.
-- Changed default keybinding from `Alt+Shift+L` to `Ctrl+Shift+L`.
+- Added log level configuration
+- Changed default keybinding to `Ctrl+Shift+L`
 
 ---
 
 ## [0.0.3] – 2025-03-30
 
-- Initial release with basic functionality to auto-insert `console.log()` for declared variables/constants in JavaScript, TypeScript, React files.
+- Initial release with basic `console.log()` insertion for JS/TS/React files
 
 ---
