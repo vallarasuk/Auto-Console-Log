@@ -16,6 +16,8 @@ const providers = {
   csharp: new (require("./providers/CSharpProvider"))(),
   go: new (require("./providers/GoProvider"))(),
   php: new (require("./providers/PhpProvider"))(),
+  cpp: new (require("./providers/CppProvider"))(),
+  swift: new (require("./providers/SwiftProvider"))(),
 };
 
 // Entry point - activate extension

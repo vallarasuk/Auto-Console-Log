@@ -33,7 +33,7 @@ class JsTsProvider extends LogProvider {
     const logOperations = [];
 
     traverse(ast, {
-      enter(path) {
+      enter: (path) => {
         if (path.isVariableDeclaration()) {
           const declarations = path.node.declarations;
           declarations.forEach((decl) => {
@@ -155,12 +155,24 @@ class JsTsProvider extends LogProvider {
 
     return parts.length > 0 ? parts.join(" > ") + " > " : "";
   }
-
   shouldSkipVariable(varName) {
-    if (varName.length <= 1) return true;
-    if (["props", "context", "ref", "children"].includes(varName)) return true;
-    if (varName.startsWith("_")) return true;
-    if (varName === "undefined" || varName === "null") return true;
+    // Check base specific skips first
+    if (super.shouldSkipVariable(varName)) return true;
+
+    // JS/React specific skips
+    if (
+      [
+        "props",
+        "context",
+        "ref",
+        "children",
+        "this",
+        "window",
+        "document",
+      ].includes(varName)
+    )
+      return true;
+
     return false;
   }
 

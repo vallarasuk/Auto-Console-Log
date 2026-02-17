@@ -48,6 +48,7 @@ class GoProvider extends LogProvider {
   }
 
   addOperation(document, selection, varName, insertLine, logOperations) {
+    if (this.shouldSkipVariable(varName)) return;
     if (insertLine >= document.lineCount) return;
     const lineText = document.lineAt(insertLine - 1).text;
     const indent = lineText.match(/^\s*/)?.[0] || "";

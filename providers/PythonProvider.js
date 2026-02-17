@@ -137,12 +137,56 @@ class PythonProvider extends LogProvider {
     });
   }
 
-  shouldSkipVariable(varName) {
-    return varName.startsWith("_");
-  }
-
   generatePythonLog(indent, varName) {
     return `${indent}print(f"${varName}: {${varName}}") // [ACL]\n`;
+  }
+
+  /**
+   * Python uses indentation for scope.
+   * @param {vscode.TextDocument} document
+   * @param {vscode.Position} position
+   */
+  getFunctionScopeRange(document, position) {
+    const line = document.lineAt(position.line);
+    const indentSize = (line.text.match(/^\s*/) || [""])[0].length;
+
+    // Search upwards for a line with LESS indentation (the parent block)
+    let startLine = -1;
+    for (let i = position.line - 1; i >= 0; i--) {
+      const currentLine = document.lineAt(i);
+      if (currentLine.isEmptyOrWhitespace) continue;
+
+      const currentIndent = (currentLine.text.match(/^\s*/) || [""])[0].length;
+      // If we find a line with less indentation, that's likely the start of the block definition (e.g. def foo():)
+      if (currentIndent < indentSize && currentLine.text.trim().endsWith(":")) {
+        startLine = i;
+        break;
+      }
+    }
+
+    if (startLine === -1) return null; // Global scope or couldn't find parent
+
+    // Search downwards for the end of the block (indentation returns to parent level)
+    let endLine = document.lineCount - 1;
+    const parentIndent = (document.lineAt(startLine).text.match(/^\s*/) || [
+      "",
+    ])[0].length;
+
+    for (let i = startLine + 1; i < document.lineCount; i++) {
+      const currentLine = document.lineAt(i);
+      if (currentLine.isEmptyOrWhitespace) continue;
+
+      const currentIndent = (currentLine.text.match(/^\s*/) || [""])[0].length;
+      if (currentIndent <= parentIndent) {
+        endLine = i - 1;
+        break;
+      }
+    }
+
+    return new vscode.Range(
+      new vscode.Position(startLine, 0),
+      new vscode.Position(endLine, 1000),
+    );
   }
 }
 
