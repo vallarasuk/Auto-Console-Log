@@ -203,17 +203,24 @@ function activate(context) {
                   }
                 } else {
                   const cursorLine = editor.selection.active.line;
+                  // Improved Scope Check:
+                  // 1. If block is Program, it's global -> Always valid
+                  // 2. If block has loc, check if cursor is within block
+                  // 3. Relaxed check: if the declaration is strictly *before* the cursor line, we assume it's in scope for that block's flow?
+                  // Actually, strict block check is good, but let's ensure 'block' is correct.
+                  // Sometimes path.scope.block is the function itself.
+
                   const block = path.scope.block;
-                  if (block.loc) {
+                  if (block.type === "Program") {
+                    inScope = true;
+                  } else if (block.loc) {
                     const blockStart = block.loc.start.line - 1;
                     const blockEnd = block.loc.end.line - 1;
 
+                    // If cursor is inside the block
                     if (cursorLine >= blockStart && cursorLine <= blockEnd) {
                       inScope = true;
                     }
-                  } else if (block.type === "Program") {
-                    // Global scope
-                    inScope = true;
                   }
                 }
 
@@ -303,7 +310,9 @@ function getContextName(path) {
 }
 
 function shouldSkipVariable(varName) {
-  if (varName.length <= 2) return true;
+  if (varName.length <= 1) return true; // Only skip single letters? Or keep 2 but allow 'id'?
+  // User specifically mentioned 'id'.
+  // Let's relax to length 1. informative variables can be 2 chars (id, db, os, ip).
   if (["props", "context", "ref", "children"].includes(varName)) return true;
   if (varName.startsWith("_")) return true;
   if (varName === "undefined" || varName === "null") return true;
