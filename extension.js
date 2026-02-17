@@ -1,4 +1,10 @@
 const vscode = require("vscode");
+const ExtPay = require("./lib/extpay-vscode");
+const parser = require("@babel/parser");
+const traverse = require("@babel/traverse").default;
+
+// Global ExtPay instance
+const extpay = ExtPay("auto-console-log-by-vallarasu-kanthasamy"); // Updated with user provided ID
 
 const supportedLanguages = [
   "javascript",
@@ -11,402 +17,374 @@ const supportedLanguages = [
 function activate(context) {
   console.log("Auto Console Log Extension Activated!");
 
-  const disposable = vscode.commands.registerCommand(
-    "extension.addConsoleLogs",
-    async () => {
+  // Initialize ExtensionPay (background sync)
+  extpay.startBackground(context);
+
+  // Check user status to show Upgrade button if free
+  extpay.getUser().then((user) => {
+    const isDev =
+      process.env.USER === "vallarasu" ||
+      process.env.USERNAME === "vallarasu" ||
+      process.env.AUTO_CONSOLE_LOG_DEV === "true";
+    if (!user.paid && !isDev) {
+      const statusBarItem = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Right,
+        100,
+      );
+      statusBarItem.text = "$(heart) Upgrade Logger Pro";
+      statusBarItem.tooltip = "Support the developer & unlock Pro features";
+      statusBarItem.command = "extension.openPaymentPage";
+      statusBarItem.show();
+      context.subscriptions.push(statusBarItem);
+    }
+  });
+
+  // Command to open payment page
+  context.subscriptions.push(
+    vscode.commands.registerCommand("extension.openPaymentPage", () => {
+      extpay.openPaymentPage();
+    }),
+  );
+
+  // Command to remove all console logs
+  context.subscriptions.push(
+    vscode.commands.registerCommand("extension.removeConsoleLogs", () => {
       const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        vscode.window.showErrorMessage("No active editor found!");
-        return;
-      }
+      if (!editor) return;
 
       const document = editor.document;
-      const languageId = document.languageId;
+      const edit = new vscode.WorkspaceEdit();
+      const logsToRemove = [];
 
-      if (!supportedLanguages.includes(languageId)) {
+      // Determine scope for removal
+      // let deletionRange = null;
+      const cursorPosition = editor.selection.active;
+      // Re-use logic to find function scope usually used for insertion, but for deletion range limit
+      // We can use the helper 'getFunctionScopeRange' if available or implement similar "is inside function" logic
+      const scopeRange = getFunctionScopeRange(document, cursorPosition);
+
+      // If cursor is inside a function, scope matches function.
+      // If cursor is at top level, scopeRange might be null or we treat it as Global.
+      // User Req: "cursor inside the function means inside only the function other wise outside of the fucntion means entire file"
+
+      const isGlobal = !scopeRange;
+
+      // If targeted (inside function), we restrict search to that range.
+      // If global, we search entire lineCount.
+
+      const startLine = isGlobal ? 0 : scopeRange.start.line;
+      const endLine = isGlobal ? document.lineCount : scopeRange.end.line;
+
+      for (let i = startLine; i < endLine; i++) {
+        const line = document.lineAt(i);
+        // Match default logs or Pro logs with signature
+        if (
+          line.text.includes("---------------------------->") ||
+          line.text.trim().endsWith("// [ACL]")
+        ) {
+          logsToRemove.push(line.rangeIncludingLineBreak);
+        }
+      }
+
+      if (logsToRemove.length === 0) {
         vscode.window.showInformationMessage(
-          `Auto Console Log not supported for ${languageId} files.`
+          isGlobal
+            ? "No auto-generated console logs found in file."
+            : "No auto-generated console logs found in current function.",
         );
         return;
       }
 
-      try {
-        const selection = editor.selection;
-        const edit = new vscode.WorkspaceEdit();
-        let hasInsertions = false;
-
-        // If text is selected, only log that variable
-        if (!selection.isEmpty) {
-          const selectedText = document.getText(selection).trim();
-          if (!isValidVariableName(selectedText)) {
-            vscode.window.showErrorMessage(
-              `"${selectedText}" doesn't appear to be a valid variable name`
-            );
-            return;
-          }
-
-          const lineNumber = selection.start.line;
-          const line = document.lineAt(lineNumber);
-          const contextName = getVariableContext(document, lineNumber);
-          const { insertPosition, indent } = getInsertPosition(
-            document,
-            lineNumber,
-            line
-          );
-
-          const logStatement = `${indent}console.log('${contextName}${selectedText} ---------------------------->', ${selectedText});\n`;
-          edit.insert(document.uri, insertPosition, logStatement);
-          hasInsertions = true;
-        }
-        // If no text selected, log all variables in scope
-        else {
-          const cursorPosition = editor.selection.active;
-          const functionRange = getFunctionScopeRange(document, cursorPosition);
-
-          if (!functionRange) {
-            vscode.window.showInformationMessage(
-              "Cursor must be inside a function or block to add logs."
-            );
-            return;
-          }
-
-          const functionText = document.getText(functionRange);
-          const fullText = document.getText();
-          const skipPatterns = extractSkipPatterns(fullText);
-          const loggedVariables = new Set();
-          const variableNames = extractVariables(functionText);
-
-          for (const varName of variableNames) {
-            const varIndexInFunction = functionText.indexOf(varName);
-            const varDocOffset =
-              document.offsetAt(functionRange.start) + varIndexInFunction;
-            const varPosition = document.positionAt(varDocOffset);
-            const lineNumber = varPosition.line;
-            const line = document.lineAt(lineNumber);
-
-            if (
-              shouldSkipVariable(
-                varName,
-                skipPatterns,
-                loggedVariables,
-                document,
-                lineNumber
-              )
-            ) {
-              continue;
-            }
-
-            const { insertPosition, indent } = getInsertPosition(
-              document,
-              lineNumber,
-              line
-            );
-            const contextName = getVariableContext(document, lineNumber);
-            const logStatement = `${indent}console.log('${contextName}${varName} ---------------------------->', ${varName});\n`;
-
-            edit.insert(document.uri, insertPosition, logStatement);
-            hasInsertions = true;
-            loggedVariables.add(varName);
-          }
-        }
-
-        if (!hasInsertions) {
-          vscode.window.showInformationMessage(
-            selection.isEmpty
-              ? "No meaningful variables found to log in current scope."
-              : "Failed to insert console log for selected variable."
-          );
-          return;
-        }
-
-        const success = await vscode.workspace.applyEdit(edit);
-        if (!success) {
-          vscode.window.showErrorMessage("Failed to insert console logs!");
-        }
-      } catch (error) {
-        vscode.window.showErrorMessage(`Error: ${error.message}`);
-        console.error("Extension error:", error);
+      for (const range of logsToRemove) {
+        edit.delete(document.uri, range);
       }
-    }
+
+      vscode.workspace.applyEdit(edit).then((success) => {
+        if (success) {
+          vscode.window.showInformationMessage(
+            `Removed ${logsToRemove.length} console logs${isGlobal ? " (File)" : " (Scope)"}.`,
+          );
+        } else {
+          vscode.window.showErrorMessage("Failed to remove console logs.");
+        }
+      });
+    }),
   );
 
-  context.subscriptions.push(disposable);
-}
-
-// Helper function to validate selected variable name
-function isValidVariableName(text) {
-  if (!text) return false;
-  // Basic check - should start with letter/underscore/dollar, then alphanumeric
-  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(text);
-}
-
-/**
- * Extract variable names declared in the given code snippet.
- * Supports const, let, var declarations avoiding function declarations and React hooks.
- */
-function extractVariables(code) {
-  const vars = new Set();
-  const varRegex =
-    /(?:^|\s|\n)(const|let|var)\s+([a-zA-Z_$][\w$]*)\s*(?=[=;,\n])/g;
-  let match;
-  while ((match = varRegex.exec(code)) !== null) {
-    vars.add(match[2]);
-  }
-  return Array.from(vars);
-}
-
-/**
- * Extract variable names/patterns to skip from the entire document text.
- * For example: React hooks, imports, exports, functions, classes, interfaces, etc.
- */
-function extractSkipPatterns(text) {
-  const skipSet = new Set();
-
-  // Skip imports
-  const importRegex =
-    /^\s*import\s+(?:\{\s*([\w\s,]*)\s*\}|[\w*,\s]+)\s+from\s+['"][^'"]+['"];/gm;
-  let importMatch;
-  while ((importMatch = importRegex.exec(text)) !== null) {
-    if (importMatch[1]) {
-      importMatch[1]
-        .split(",")
-        .map((s) => s.trim())
-        .forEach((name) => skipSet.add(name));
-    }
-  }
-
-  // Skip exports (named and default)
-  const exportRegex =
-    /^\s*export\s+(?:(?:const|let|var|function|class)\s+)?(\w+)/gm;
-  let exportMatch;
-  while ((exportMatch = exportRegex.exec(text)) !== null) {
-    skipSet.add(exportMatch[1]);
-  }
-  const exportDefaultRegex = /^\s*export\s+default\s+(\w+)/gm;
-  let exportDefaultMatch;
-  while ((exportDefaultMatch = exportDefaultRegex.exec(text)) !== null) {
-    skipSet.add(exportDefaultMatch[1]);
-  }
-
-  // Skip function and class declarations
-  const functionClassRegex = /^\s*(?:async\s+)?(?:function|class)\s+(\w+)/gm;
-  let functionClassMatch;
-  while ((functionClassMatch = functionClassRegex.exec(text)) !== null) {
-    skipSet.add(functionClassMatch[1]);
-  }
-
-  // Skip interface and type aliases
-  const interfaceTypeRegex = /^\s*(?:interface|type)\s+(\w+)/gm;
-  let interfaceTypeMatch;
-  while ((interfaceTypeMatch = interfaceTypeRegex.exec(text)) !== null) {
-    skipSet.add(interfaceTypeMatch[1]);
-  }
-
-  // Skip React hooks (starting with 'use')
-  const hookRegex = /\b(use[A-Z]\w*)\b/g;
-  let hookMatch;
-  while ((hookMatch = hookRegex.exec(text)) !== null) {
-    skipSet.add(hookMatch[1]);
-  }
-
-  // Skip variables declared with arrow functions
-  const arrowFunctionRegex = /const\s+(\w+)\s*=\s*\(?[\w\s,]*\)?\s*=>/g;
-  let arrowMatch;
-  while ((arrowMatch = arrowFunctionRegex.exec(text)) !== null) {
-    skipSet.add(arrowMatch[1]);
-  }
-
-  // Skip destructured useState variables
-  const useStateRegex = /const\s+\[(\w+),\s*\w+\]\s*=\s*useState/g;
-  let useStateMatch;
-  while ((useStateMatch = useStateRegex.exec(text)) !== null) {
-    skipSet.add(useStateMatch[1]);
-  }
-
-  return skipSet;
-}
-
-/**
- * Decide whether to skip logging this variable.
- */
-function shouldSkipVariable(
-  varName,
-  skipPatterns,
-  loggedVariables,
-  document,
-  lineNumber
-) {
-  if (skipPatterns.has(varName)) return true;
-  if (loggedVariables.has(varName)) return true;
-  if (varName.length <= 2) return true;
-  if (varName[0] === varName[0].toUpperCase()) return true; // Probably class or constant
-  if (varName.startsWith("_")) return true;
-  if (varName.startsWith("use")) return true; // Hooks
-  if (["props", "context", "ref", "children"].includes(varName)) return true;
-  if (hasConsoleLogInScope(document, lineNumber, varName)) return true;
-  return false;
-}
-
-/**
- * Check if there is already a console.log for this variable in the current scope (function/block).
- */
-function hasConsoleLogInScope(document, lineNumber, varName) {
-  const scopeRange = findScopeRangeAroundLine(document, lineNumber);
-  if (!scopeRange) return false;
-
-  for (let i = scopeRange.start.line; i <= scopeRange.end.line; i++) {
-    const lineText = document.lineAt(i).text;
-    // Basic check if console.log with variable already exists
-    const regex = new RegExp(`console\\.log\\([^)]*\\b${varName}\\b[^)]*\\)`);
-    if (regex.test(lineText)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
- * Find the start and end range of the block (function or code block) around a line.
- */
-function findScopeRangeAroundLine(document, lineNumber) {
-  // Search upward to find opening brace of scope
-  let startLine = -1;
-  let braceBalance = 0;
-
-  for (let i = lineNumber; i >= 0; i--) {
-    const lineText = document.lineAt(i).text;
-
-    // Count braces on this line
-    const openBraces = (lineText.match(/{/g) || []).length;
-    const closeBraces = (lineText.match(/}/g) || []).length;
-
-    braceBalance += closeBraces - openBraces;
-
-    if (lineText.includes("{") && braceBalance < 0) {
-      startLine = i;
-      break;
-    }
-  }
-  if (startLine === -1) return null;
-
-  // Search downward to find matching closing brace
-  let endLine = -1;
-  braceBalance = 0;
-  for (let i = startLine; i < document.lineCount; i++) {
-    const lineText = document.lineAt(i).text;
-    const openBraces = (lineText.match(/{/g) || []).length;
-    const closeBraces = (lineText.match(/}/g) || []).length;
-    braceBalance += openBraces - closeBraces;
-
-    if (braceBalance === 0) {
-      endLine = i;
-      break;
-    }
-  }
-  if (endLine === -1) return null;
-
-  return new vscode.Range(
-    new vscode.Position(startLine, 0),
-    new vscode.Position(endLine, document.lineAt(endLine).text.length)
-  );
-}
-
-/**
- * Determine insert position for console.log statement after variable declaration.
- * Handles multi-line declarations by checking for balanced brackets.
- */
-function getInsertPosition(document, lineNumber, line) {
-  let insertLine = lineNumber;
-  let currentLineNumber = lineNumber;
-  let openBrackets = 0;
-  let openBraces = 0;
-  let openParens = 0;
-
-  while (currentLineNumber < document.lineCount) {
-    const currentLineText = document.lineAt(currentLineNumber).text.trim();
-
-    for (const char of currentLineText) {
-      if (char === "[") openBrackets++;
-      else if (char === "]") openBrackets--;
-      else if (char === "{") openBraces++;
-      else if (char === "}") openBraces--;
-      else if (char === "(") openParens++;
-      else if (char === ")") openParens--;
+  const insertConsoleLogs = async () => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      vscode.window.showErrorMessage("No active editor found!");
+      return;
     }
 
-    // Check if the declaration seems to have ended
-    if (
-      currentLineNumber > lineNumber && // Don't check the starting line immediately
-      openBrackets <= 0 &&
-      openBraces <= 0 &&
-      openParens <= 0 &&
-      (currentLineText.endsWith(";") ||
-        currentLineText.endsWith(",") ||
-        currentLineText === "")
-    ) {
-      insertLine = currentLineNumber + (currentLineText === "" ? 0 : 1); // Insert after the line
-      return {
-        insertPosition: new vscode.Position(insertLine, 0),
-        indent: line.text.match(/^\s*/)?.[0] || "",
-      };
-    }
-    currentLineNumber++;
-  }
+    const document = editor.document;
+    const languageId = document.languageId;
 
-  // Fallback if no clear end is found
-  return {
-    insertPosition: new vscode.Position(lineNumber + 1, 0),
-    indent: line.text.match(/^\s*/)?.[0] || "",
+    if (!supportedLanguages.includes(languageId)) {
+      vscode.window.showInformationMessage(
+        `Auto Console Log not supported for ${languageId} files.`,
+      );
+      return;
+    }
+
+    try {
+      const selection = editor.selection;
+      const code = document.getText();
+      let ast;
+      try {
+        ast = parser.parse(code, {
+          sourceType: "module",
+          plugins: [
+            "jsx",
+            "typescript",
+            "classProperties",
+            "decorators-legacy",
+            "dynamicImport",
+          ],
+        });
+      } catch (e) {
+        vscode.window.showErrorMessage(
+          "Failed to parse file. Please fix syntax errors.",
+        );
+        console.error(e);
+        return;
+      }
+
+      const edit = new vscode.WorkspaceEdit();
+      const logOperations = [];
+
+      // Analysis
+      traverse(ast, {
+        enter(path) {
+          if (path.isVariableDeclaration()) {
+            const declarations = path.node.declarations;
+            declarations.forEach((decl) => {
+              const varsToLog = [];
+
+              // Handle destructuring
+              if (decl.id.type === "Identifier") {
+                varsToLog.push(decl.id.name);
+              } else if (decl.id.type === "ObjectPattern") {
+                decl.id.properties.forEach((prop) => {
+                  if (
+                    prop.type === "ObjectProperty" &&
+                    prop.value.type === "Identifier"
+                  ) {
+                    varsToLog.push(prop.value.name);
+                  } else if (
+                    prop.type === "ObjectProperty" &&
+                    prop.key.type === "Identifier" &&
+                    prop.shorthand
+                  ) {
+                    varsToLog.push(prop.key.name);
+                  }
+                });
+              } else if (decl.id.type === "ArrayPattern") {
+                decl.id.elements.forEach((elem) => {
+                  if (elem && elem.type === "Identifier") {
+                    varsToLog.push(elem.name);
+                  }
+                });
+              }
+
+              if (varsToLog.length === 0) return;
+
+              const insertLine = path.node.loc.end.line;
+              const insertPos = new vscode.Position(insertLine, 0);
+
+              varsToLog.forEach((varName) => {
+                let inScope = false;
+
+                if (!selection.isEmpty) {
+                  const selectedText = document.getText(selection).trim();
+                  if (varName === selectedText) {
+                    inScope = true;
+                  }
+                } else {
+                  const cursorLine = editor.selection.active.line;
+                  const block = path.scope.block;
+                  if (block.loc) {
+                    const blockStart = block.loc.start.line - 1;
+                    const blockEnd = block.loc.end.line - 1;
+
+                    if (cursorLine >= blockStart && cursorLine <= blockEnd) {
+                      inScope = true;
+                    }
+                  } else if (block.type === "Program") {
+                    // Global scope
+                    inScope = true;
+                  }
+                }
+
+                if (!inScope) return;
+                if (shouldSkipVariable(varName)) return;
+                if (hasConsoleLogInScope(document, insertLine, varName)) return;
+
+                const contextName = getContextName(path);
+                const lineText = document.lineAt(insertLine - 1).text;
+                const indent = lineText.match(/^\s*/)?.[0] || "";
+
+                logOperations.push({
+                  uri: document.uri,
+                  position: insertPos,
+                  contextName,
+                  varName,
+                  indent,
+                });
+              });
+            });
+          }
+        },
+      });
+
+      if (logOperations.length === 0) {
+        vscode.window.showInformationMessage("No variables found to log.");
+        return;
+      }
+
+      // Generate and insert
+      for (const op of logOperations) {
+        const logStatement = await generateLogStatement(
+          document,
+          op.contextName,
+          op.varName,
+          op.indent,
+        );
+        edit.insert(op.uri, op.position, logStatement);
+      }
+
+      const success = await vscode.workspace.applyEdit(edit);
+      if (!success) {
+        vscode.window.showErrorMessage("Failed to insert logs.");
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(`Error: ${error.message}`);
+      console.error("Extension error:", error);
+    }
   };
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "extension.addConsoleLogs",
+      insertConsoleLogs,
+    ),
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "extension.addConsoleLogForSelection",
+      insertConsoleLogs,
+    ),
+  );
 }
 
-/**
- * Get the current function or const function name above the variable line for log context.
- */
-function getVariableContext(document, lineNumber) {
-  let contextParts = [];
-  let currentLineNumber = lineNumber;
-  let openBraces = 0;
+// --- Helpers ---
 
-  while (currentLineNumber >= 0) {
-    const lineText = document.lineAt(currentLineNumber).text;
+function getContextName(path) {
+  // Traverse up to find parent function/class
+  let p = path.scope.path;
+  const parts = [];
 
-    // Match named function
-    let match = lineText.match(/function\s+([a-zA-Z_$][\w$]*)\s*\(/);
-    if (match) {
-      contextParts.unshift(match[1]);
-      return contextParts.join(" > ") + " > ";
+  while (p) {
+    if (p.isFunctionDeclaration()) {
+      if (p.node.id) parts.unshift(p.node.id.name);
+    } else if (p.isClassMethod()) {
+      if (p.node.key.type === "Identifier") parts.unshift(p.node.key.name);
+    } else if (p.isVariableDeclarator()) {
+      // const foo = () => {}
+      if (p.node.id.type === "Identifier") parts.unshift(p.node.id.name);
     }
 
-    // Match const arrow function or const function
-    match = lineText.match(
-      /const\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:async\s*)?\(?[\w\s,]*\)?\s*=>/
-    );
-    if (match) {
-      contextParts.unshift(match[1]);
-      return contextParts.join(" > ") + " > ";
-    }
-
-    // Match class method
-    match = lineText.match(/([a-zA-Z_$][\w$]*)\s*\([^)]*\)\s*{/);
-    if (match) {
-      contextParts.unshift(match[1]);
-      return contextParts.join(" > ") + " > ";
-    }
-
-    // Keep track of braces to potentially stop at a higher scope
-    const open = (lineText.match(/{/g) || []).length;
-    const close = (lineText.match(/}/g) || []).length;
-    openBraces += open - close;
-
-    // Consider stopping if we move out of the initial function scope (heuristic)
-    if (currentLineNumber < lineNumber && openBraces <= 0) {
-      break;
-    }
-
-    currentLineNumber--;
+    p = p.parentPath;
+    if (!p || p.isProgram()) break;
   }
-  return "";
+
+  return parts.length > 0 ? parts.join(" > ") + " > " : "";
+}
+
+function shouldSkipVariable(varName) {
+  if (varName.length <= 2) return true;
+  if (["props", "context", "ref", "children"].includes(varName)) return true;
+  if (varName.startsWith("_")) return true;
+  if (varName === "undefined" || varName === "null") return true;
+  return false;
+}
+
+function hasConsoleLogInScope(document, lineNumber, varName) {
+  // Simple heuristic check in the next few lines?
+  // Or just checking the immediate next line?
+  // Let's check next 5 lines? or use document search?
+  // The previous implementation searched the whole scope block.
+  // We can simplify to just checking if a log exists nearby or if regex matches in file?
+  // Let's trust the user or check if console.log(..., varName) is exactly after.
+
+  // For safety/speed, let's just check if the next line already logs it.
+  if (lineNumber < document.lineCount) {
+    const nextLine = document.lineAt(lineNumber).text;
+    if (nextLine.includes(`console.`) && nextLine.includes(varName))
+      return true;
+  }
+  return false;
+}
+
+async function generateLogStatement(document, contextName, varName, indent) {
+  const config = vscode.workspace.getConfiguration(
+    "autoConsoleLogByVallarasuKanthasamy",
+  );
+  const logLevel = config.get("logLevel") || "info"; // log, info, warn, error
+  const proConfig = config.get("pro") || {};
+
+  // Check Pro status
+  let isPro = false;
+  try {
+    const user = await extpay.getUser();
+    isPro = user.paid;
+  } catch {
+    // console.error("Failed to check Pro status");
+  }
+
+  // Developer Bypass
+  if (
+    process.env.USER === "vallarasu" ||
+    process.env.USERNAME === "vallarasu" ||
+    process.env.AUTO_CONSOLE_LOG_DEV === "true"
+  ) {
+    isPro = true;
+  }
+
+  // Suffix to identify logs for removal
+  const suffix = " // [ACL]\n";
+
+  if (isPro) {
+    // 1. Remote Logging
+    if (proConfig.remoteLogUrl && proConfig.remoteLogUrl.trim() !== "") {
+      const url = proConfig.remoteLogUrl.trim();
+      const payload = `{
+    file: "${document.fileName.replace(/\\/g, "\\\\\\\\")}",
+    line: ${contextName ? '"' + contextName + '"' : "null"},
+    var: "${varName}",
+    value: ${varName},
+    timestamp: new Date().toISOString()
+}`;
+      return `${indent}fetch('${url}', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(${payload}) }).catch(()=>{});${suffix}`;
+    }
+
+    // 2. Custom Templates
+    if (proConfig.logTemplate && proConfig.logTemplate.trim() !== "") {
+      let template = proConfig.logTemplate;
+      template = template.replace(/{varName}/g, varName);
+      template = template.replace(/{file}/g, document.fileName);
+      template = template.replace(
+        /{context}/g,
+        contextName.replace(/ > $/, ""),
+      );
+      return `${indent}${template};${suffix}`;
+    }
+  }
+
+  // Default Behavior
+  const method = ["warn", "error"].includes(logLevel) ? logLevel : "log";
+  return `${indent}console.${method}('${contextName}${varName} ---------------------------->', ${varName});${suffix}`;
 }
 
 /**
@@ -451,7 +429,7 @@ function getFunctionScopeRange(document, position) {
 
   return new vscode.Range(
     document.positionAt(start),
-    document.positionAt(end + 1)
+    document.positionAt(end + 1),
   );
 }
 

@@ -2,7 +2,7 @@
   "name": "auto-console-log-by-vallarasu-kanthasamy",
   "displayName": "Auto Console Log By Vallarasu Kanthasamy",
   "description": "Effortlessly insert console.log statements for all declared variables in JavaScript, TypeScript, and React files. Built for fast debugging and productivity by React Developer Vallarasu Kanthasamy.",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "publisher": "VallarasuKanthasamy",
   "icon": "logo.png",
   "engines": {
@@ -77,7 +77,13 @@
         "key": "ctrl+l",
         "mac": "cmd+l",
         "when": "editorTextFocus"
-      } 
+      },
+      {
+        "command": "extension.removeConsoleLogs",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorTextFocus"
+      }
     ],
     "configuration": {
       "type": "object",
@@ -98,6 +104,16 @@
             "error"
           ],
           "description": "Set the log level for generated console statements."
+        },
+        "autoConsoleLogByVallarasuKanthasamy.pro.logTemplate": {
+          "type": "string",
+          "default": "",
+          "description": "Custom log template for Pro users. Use {varName}, {line}, {file}, {context} as placeholders."
+        },
+        "autoConsoleLogByVallarasuKanthasamy.pro.remoteLogUrl": {
+          "type": "string",
+          "default": "",
+          "description": "URL to send logs to for remote debugging (Pro feature)."
         }
       }
     }
