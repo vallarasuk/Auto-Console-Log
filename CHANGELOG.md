@@ -6,6 +6,71 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.4.0] – 2026-02-17
+
+### Added
+
+- 🌍 **Multi-Language Support:**
+  - Added support for **Python** (`print(f"...")`)
+  - Added support for **Java** (`System.out.println(...)`)
+  - Added support for **C#** (`Console.WriteLine(...)`)
+  - Added support for **Go** (`fmt.Printf(...)`)
+  - Added support for **PHP** (`error_log(...)`)
+- 🏗 **Provider Pattern:** Refactored extension architecture to easily plug in new languages.
+
+### Fixed
+
+- **Performance:** Optimized log insertion logic by splitting generic and language-specific providers.
+
+---
+
+## [0.3.1] – 2026-02-17
+
+### Changed
+
+- 🔄 **Shortcut Reversion:**
+  - Reverted "Add Log for Selection" shortcut back to `Ctrl+L` (Cmd+L on Mac) based on user feedback.
+
+---
+
+## [0.3.0] – 2026-02-17
+
+### Changed
+
+- ⌨️ **New Shortcuts:**
+  - `Ctrl+Alt+L`: Add All Logs
+  - `Ctrl+Alt+R`: Remove All Logs
+- 🛠 **Developer Experience:**
+  - Added `Ctrl+Alt+K` (temporary) for selection logging.
+
+### Added
+
+- 🔓 **Developer Bypass:** Added local environment variable check for Pro features during development.
+
+---
+
+## [0.2.1] – 2026-02-17
+
+### Fixed
+
+- 🐛 **Keybinding Fixes:** Resolved duplicate keybinding entries in `package.json`.
+
+---
+
+## [0.2.0] – 2026-02-17
+
+### Added
+
+- 🧠 **Smart AST Parsing:**
+  - Replaced Regex with `@babel/parser` for accurate JS/TS variable detection.
+  - Supports Destructuring, React Hooks, and Nested Scopes.
+- 🧹 **Context-Aware Removal:**
+  - "Remove Logs" now detects if the cursor is inside a function and only removes logs from that function. If outside, it cleans the whole file.
+
+### Fixed
+
+- **Scope Issues:** Fixed bugs where variables outside the current scope were being logged.
+
 ## [0.1.5] – 2025-06-10
 
 ### Added
@@ -14,7 +79,6 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
   - Bug Fixes related to single variable console log fixed
 
 ---
-
 
 ## [0.1.4] – 2025-06-10
 
@@ -31,14 +95,12 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 
 - 🔧 **Package Update:**
-
   - Incremented version to `0.1.3`
   - Ensured accurate `publisher`, `icon`, and `repository` fields in `package.json`
   - Verified compatibility with VS Code `^1.98.0`
   - Aligned extension keywords and description for better discoverability
 
 - 📁 **Files Field Added:**
-
   - Explicitly listed necessary files (`dist`, `media`, `README.md`, `Assets`) for publishing to the Marketplace
 
 - 🧪 **Script Enhancements:**
