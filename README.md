@@ -28,7 +28,7 @@
 ## 🎯 Key Feature Highlight
 
 <div align="center" style="padding: 30px; font-size: 20px; font-weight: 600; background: #fff8f6; color: #ff6f61; border: 3px dashed #ff6f61; border-radius: 20px; max-width: 680px;">
-💥 Press <code>Ctrl + Shift + L</code> to instantly console.log ALL your variables in the file.  
+💥 Press <code>Ctrl + Alt + L</code> to instantly console.log ALL your variables in the file.  
 No typing, no missing logs — just <strong>supercharged debugging</strong> ⚡
 </div>
 
@@ -48,11 +48,12 @@ No typing, no missing logs — just <strong>supercharged debugging</strong> ⚡
 
 Just hit the shortcut and BOOM 💥 — all variables in your file are automatically logged.
 
-| OS                 | Shortcut                          |
-| ------------------ | --------------------------------- |
-| 🪟 Windows/Linux   | `Ctrl + Shift + L`                |
-| 🍎 macOS           | `Cmd + Shift + L`                 |
-| 🧭 Command Palette | `Ctrl+Shift+P → Add Console Logs` |
+| OS               | Add All Logs     | Add Selection Log | Remove Logs      |
+| ---------------- | ---------------- | ----------------- | ---------------- |
+| 🪟 Windows/Linux | `Ctrl + Alt + L` | `Ctrl + L`        | `Ctrl + Alt + R` |
+| 🍎 macOS         | `Cmd + Alt + L`  | `Cmd + L`         | `Cmd + Alt + R`  |
+
+---
 
 ---
 
@@ -70,8 +71,8 @@ Or install from the [Marketplace →](https://marketplace.visualstudio.com/items
 ## ✅ What It Logs
 
 - All `let`, `const`, and `var` variables in the current file
-- Files supported: `.js`, `.ts`, `.jsx`, `.tsx`
-- Format: `console.log("name:", name);`
+- Supported: JS, TS, React, Python, Java, C#, Go, PHP
+- Format: Native logging for each language (e.g. `print`, `System.out.println`, `fmt.Printf`)
 
 ---
 

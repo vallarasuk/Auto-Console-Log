@@ -1,17 +1,22 @@
 const vscode = require("vscode");
 const ExtPay = require("./lib/extpay-vscode");
-const parser = require("@babel/parser");
-const traverse = require("@babel/traverse").default;
+const JsTsProvider = require("./providers/JsTsProvider");
 
 // Global ExtPay instance
-const extpay = ExtPay("auto-console-log-by-vallarasu-kanthasamy"); // Updated with user provided ID
+const extpay = ExtPay("auto-console-log-by-vallarasu-kanthasamy");
 
-const supportedLanguages = [
-  "javascript",
-  "javascriptreact",
-  "typescript",
-  "typescriptreact",
-];
+// Provider Registry
+const providers = {
+  javascript: new JsTsProvider(),
+  javascriptreact: new JsTsProvider(),
+  typescript: new JsTsProvider(),
+  typescriptreact: new JsTsProvider(),
+  python: new (require("./providers/PythonProvider"))(),
+  java: new (require("./providers/JavaProvider"))(),
+  csharp: new (require("./providers/CSharpProvider"))(),
+  go: new (require("./providers/GoProvider"))(),
+  php: new (require("./providers/PhpProvider"))(),
+};
 
 // Entry point - activate extension
 function activate(context) {
@@ -53,25 +58,32 @@ function activate(context) {
       if (!editor) return;
 
       const document = editor.document;
+      const languageId = document.languageId;
+      const provider = providers[languageId];
+
+      if (!provider) {
+        // Fallback removal for unsupported languages?
+        // We can use a generic removal if we assume standard log formats or user-defined formats.
+        // For now, let's allow it if we know the language specific log format or just generic cleanup?
+        // Actually, let's keep it consistent: only support removal if we support the language OR if we add a GenericProvider.
+        vscode.window.showInformationMessage(
+          `Log removal not fully supported for ${languageId} yet.`,
+        );
+        return;
+      }
+
       const edit = new vscode.WorkspaceEdit();
       const logsToRemove = [];
 
       // Determine scope for removal
-      // let deletionRange = null;
       const cursorPosition = editor.selection.active;
-      // Re-use logic to find function scope usually used for insertion, but for deletion range limit
-      // We can use the helper 'getFunctionScopeRange' if available or implement similar "is inside function" logic
-      const scopeRange = getFunctionScopeRange(document, cursorPosition);
-
-      // If cursor is inside a function, scope matches function.
-      // If cursor is at top level, scopeRange might be null or we treat it as Global.
-      // User Req: "cursor inside the function means inside only the function other wise outside of the fucntion means entire file"
+      // Use provider's scope detection
+      const scopeRange = provider.getFunctionScopeRange(
+        document,
+        cursorPosition,
+      );
 
       const isGlobal = !scopeRange;
-
-      // If targeted (inside function), we restrict search to that range.
-      // If global, we search entire lineCount.
-
       const startLine = isGlobal ? 0 : scopeRange.start.line;
       const endLine = isGlobal ? document.lineCount : scopeRange.end.line;
 
@@ -102,7 +114,9 @@ function activate(context) {
       vscode.workspace.applyEdit(edit).then((success) => {
         if (success) {
           vscode.window.showInformationMessage(
-            `Removed ${logsToRemove.length} console logs${isGlobal ? " (File)" : " (Scope)"}.`,
+            `Removed ${logsToRemove.length} console logs${
+              isGlobal ? " (File)" : " (Scope)"
+            }.`,
           );
         } else {
           vscode.window.showErrorMessage("Failed to remove console logs.");
@@ -120,8 +134,9 @@ function activate(context) {
 
     const document = editor.document;
     const languageId = document.languageId;
+    const provider = providers[languageId];
 
-    if (!supportedLanguages.includes(languageId)) {
+    if (!provider) {
       vscode.window.showInformationMessage(
         `Auto Console Log not supported for ${languageId} files.`,
       );
@@ -129,142 +144,7 @@ function activate(context) {
     }
 
     try {
-      const selection = editor.selection;
-      const code = document.getText();
-      let ast;
-      try {
-        ast = parser.parse(code, {
-          sourceType: "module",
-          plugins: [
-            "jsx",
-            "typescript",
-            "classProperties",
-            "decorators-legacy",
-            "dynamicImport",
-          ],
-        });
-      } catch (e) {
-        vscode.window.showErrorMessage(
-          "Failed to parse file. Please fix syntax errors.",
-        );
-        console.error(e);
-        return;
-      }
-
-      const edit = new vscode.WorkspaceEdit();
-      const logOperations = [];
-
-      // Analysis
-      traverse(ast, {
-        enter(path) {
-          if (path.isVariableDeclaration()) {
-            const declarations = path.node.declarations;
-            declarations.forEach((decl) => {
-              const varsToLog = [];
-
-              // Handle destructuring
-              if (decl.id.type === "Identifier") {
-                varsToLog.push(decl.id.name);
-              } else if (decl.id.type === "ObjectPattern") {
-                decl.id.properties.forEach((prop) => {
-                  if (
-                    prop.type === "ObjectProperty" &&
-                    prop.value.type === "Identifier"
-                  ) {
-                    varsToLog.push(prop.value.name);
-                  } else if (
-                    prop.type === "ObjectProperty" &&
-                    prop.key.type === "Identifier" &&
-                    prop.shorthand
-                  ) {
-                    varsToLog.push(prop.key.name);
-                  }
-                });
-              } else if (decl.id.type === "ArrayPattern") {
-                decl.id.elements.forEach((elem) => {
-                  if (elem && elem.type === "Identifier") {
-                    varsToLog.push(elem.name);
-                  }
-                });
-              }
-
-              if (varsToLog.length === 0) return;
-
-              const insertLine = path.node.loc.end.line;
-              const insertPos = new vscode.Position(insertLine, 0);
-
-              varsToLog.forEach((varName) => {
-                let inScope = false;
-
-                if (!selection.isEmpty) {
-                  const selectedText = document.getText(selection).trim();
-                  if (varName === selectedText) {
-                    inScope = true;
-                  }
-                } else {
-                  const cursorLine = editor.selection.active.line;
-                  // Improved Scope Check:
-                  // 1. If block is Program, it's global -> Always valid
-                  // 2. If block has loc, check if cursor is within block
-                  // 3. Relaxed check: if the declaration is strictly *before* the cursor line, we assume it's in scope for that block's flow?
-                  // Actually, strict block check is good, but let's ensure 'block' is correct.
-                  // Sometimes path.scope.block is the function itself.
-
-                  const block = path.scope.block;
-                  if (block.type === "Program") {
-                    inScope = true;
-                  } else if (block.loc) {
-                    const blockStart = block.loc.start.line - 1;
-                    const blockEnd = block.loc.end.line - 1;
-
-                    // If cursor is inside the block
-                    if (cursorLine >= blockStart && cursorLine <= blockEnd) {
-                      inScope = true;
-                    }
-                  }
-                }
-
-                if (!inScope) return;
-                if (shouldSkipVariable(varName)) return;
-                if (hasConsoleLogInScope(document, insertLine, varName)) return;
-
-                const contextName = getContextName(path);
-                const lineText = document.lineAt(insertLine - 1).text;
-                const indent = lineText.match(/^\s*/)?.[0] || "";
-
-                logOperations.push({
-                  uri: document.uri,
-                  position: insertPos,
-                  contextName,
-                  varName,
-                  indent,
-                });
-              });
-            });
-          }
-        },
-      });
-
-      if (logOperations.length === 0) {
-        vscode.window.showInformationMessage("No variables found to log.");
-        return;
-      }
-
-      // Generate and insert
-      for (const op of logOperations) {
-        const logStatement = await generateLogStatement(
-          document,
-          op.contextName,
-          op.varName,
-          op.indent,
-        );
-        edit.insert(op.uri, op.position, logStatement);
-      }
-
-      const success = await vscode.workspace.applyEdit(edit);
-      if (!success) {
-        vscode.window.showErrorMessage("Failed to insert logs.");
-      }
+      await provider.insertConsoleLogs(editor, generateLogStatement);
     } catch (error) {
       vscode.window.showErrorMessage(`Error: ${error.message}`);
       console.error("Extension error:", error);
@@ -285,57 +165,7 @@ function activate(context) {
   );
 }
 
-// --- Helpers ---
-
-function getContextName(path) {
-  // Traverse up to find parent function/class
-  let p = path.scope.path;
-  const parts = [];
-
-  while (p) {
-    if (p.isFunctionDeclaration()) {
-      if (p.node.id) parts.unshift(p.node.id.name);
-    } else if (p.isClassMethod()) {
-      if (p.node.key.type === "Identifier") parts.unshift(p.node.key.name);
-    } else if (p.isVariableDeclarator()) {
-      // const foo = () => {}
-      if (p.node.id.type === "Identifier") parts.unshift(p.node.id.name);
-    }
-
-    p = p.parentPath;
-    if (!p || p.isProgram()) break;
-  }
-
-  return parts.length > 0 ? parts.join(" > ") + " > " : "";
-}
-
-function shouldSkipVariable(varName) {
-  if (varName.length <= 1) return true; // Only skip single letters? Or keep 2 but allow 'id'?
-  // User specifically mentioned 'id'.
-  // Let's relax to length 1. informative variables can be 2 chars (id, db, os, ip).
-  if (["props", "context", "ref", "children"].includes(varName)) return true;
-  if (varName.startsWith("_")) return true;
-  if (varName === "undefined" || varName === "null") return true;
-  return false;
-}
-
-function hasConsoleLogInScope(document, lineNumber, varName) {
-  // Simple heuristic check in the next few lines?
-  // Or just checking the immediate next line?
-  // Let's check next 5 lines? or use document search?
-  // The previous implementation searched the whole scope block.
-  // We can simplify to just checking if a log exists nearby or if regex matches in file?
-  // Let's trust the user or check if console.log(..., varName) is exactly after.
-
-  // For safety/speed, let's just check if the next line already logs it.
-  if (lineNumber < document.lineCount) {
-    const nextLine = document.lineAt(lineNumber).text;
-    if (nextLine.includes(`console.`) && nextLine.includes(varName))
-      return true;
-  }
-  return false;
-}
-
+// Helper: Generate Log Statement (Shared)
 async function generateLogStatement(document, contextName, varName, indent) {
   const config = vscode.workspace.getConfiguration(
     "autoConsoleLogByVallarasuKanthasamy",
@@ -385,7 +215,7 @@ async function generateLogStatement(document, contextName, varName, indent) {
       template = template.replace(/{file}/g, document.fileName);
       template = template.replace(
         /{context}/g,
-        contextName.replace(/ > $/, ""),
+        contextName ? contextName.replace(/ > $/, "") : "",
       );
       return `${indent}${template};${suffix}`;
     }
@@ -393,53 +223,12 @@ async function generateLogStatement(document, contextName, varName, indent) {
 
   // Default Behavior
   const method = ["warn", "error"].includes(logLevel) ? logLevel : "log";
+  // Note: Some languages (python) might not use 'console.log'.
+  // We might need to delegate this generation to the provider or make it language-aware if it's not generic 'console.log'
+  // For JS/TS, this is fine. For others, we need logic.
+  // FIXME: Move log generation string construction to Provider or make this function language-aware?
+  // Current refactor only affects logic flow. `JsTsProvider` calls this.
   return `${indent}console.${method}('${contextName}${varName} ---------------------------->', ${varName});${suffix}`;
-}
-
-/**
- * Get the range of the function/block scope containing the cursor position.
- * Improved brace matching using offset in full document text.
- */
-function getFunctionScopeRange(document, position) {
-  const text = document.getText();
-  const offset = document.offsetAt(position);
-
-  // Find start of scope by balancing braces backward
-  let start = -1;
-  let balance = 0;
-
-  for (let i = offset; i >= 0; i--) {
-    if (text[i] === "{") {
-      balance--;
-      if (balance < 0) {
-        start = i;
-        break;
-      }
-    } else if (text[i] === "}") {
-      balance++;
-    }
-  }
-  if (start === -1) return null;
-
-  // Find end of scope by balancing braces forward
-  let end = -1;
-  balance = 1;
-  for (let i = start + 1; i < text.length; i++) {
-    if (text[i] === "{") balance++;
-    else if (text[i] === "}") balance--;
-
-    if (balance === 0) {
-      end = i;
-      break;
-    }
-  }
-
-  if (end === -1) return null;
-
-  return new vscode.Range(
-    document.positionAt(start),
-    document.positionAt(end + 1),
-  );
 }
 
 function deactivate() {}
