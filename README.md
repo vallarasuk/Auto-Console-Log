@@ -68,11 +68,21 @@ Or install from the [Marketplace →](https://marketplace.visualstudio.com/items
 
 ---
 
-## ✅ What It Logs
+## ✅ Supported Languages & Log Formats
 
-- All `let`, `const`, and `var` variables in the current file
-- Supported: JS, TS, React, Python, Java, C#, Go, PHP
-- Format: Native logging for each language (e.g. `print`, `System.out.println`, `fmt.Printf`)
+| Language               | Extension     | Log Format                                  |
+| :--------------------- | :------------ | :------------------------------------------ |
+| **JavaScript / React** | `.js`, `.jsx` | `console.log("var:", var);`                 |
+| **TypeScript / React** | `.ts`, `.tsx` | `console.log("var:", var);`                 |
+| **Python**             | `.py`         | `print(f"var: {var}")`                      |
+| **Java**               | `.java`       | `System.out.println("var: " + var);`        |
+| **C#**                 | `.cs`         | `Console.WriteLine($"var: {var}");`         |
+| **Go**                 | `.go`         | `fmt.Printf("var: %+v\n", var)`             |
+| **PHP**                | `.php`        | `error_log("var: " . print_r($var, true));` |
+| **C++**                | `.cpp`        | `std::cout << "var: " << var << std::endl;` |
+| **Swift**              | `.swift`      | `print("var: \(var)")`                      |
+
+_Note: The extension automatically detects the language based on the file extension._
 
 ---
 
@@ -91,7 +101,7 @@ Or install from the [Marketplace →](https://marketplace.visualstudio.com/items
 
 ✅ One-shot shortcut logging  
 ✅ Custom log levels (`log`, `info`, `warn`, `error`)  
-✅ Supports `.js`, `.ts`, `.jsx`, `.tsx`  
+✅ Supports 9+ Languages (JS, Python, Java, Go, C++, etc.)  
 ✅ Lightning-fast debugging for real projects
 
 ---

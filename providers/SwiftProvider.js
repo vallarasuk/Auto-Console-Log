@@ -1,7 +1,7 @@
 const vscode = require("vscode");
 const LogProvider = require("./LogProvider");
 
-class JavaProvider extends LogProvider {
+class SwiftProvider extends LogProvider {
   /**
    * @param {vscode.TextEditor} editor
    */
@@ -11,44 +11,59 @@ class JavaProvider extends LogProvider {
     const selection = editor.selection;
     const logOperations = [];
 
-    // Assignments: Type var = val; or var = val;
-    // Regex: \b(?:[a-zA-Z_]\w+\s+)?([a-zA-Z_]\w*)\s*=
-    const assignmentRegex = /\b(?:[a-zA-Z_]\w+\s+)?([a-zA-Z_]\w*)\s*=/g;
+    // Swift: var x = ..., let x = ...
+    const declRegex = /\b(?:var|let)\s+([a-zA-Z_]\w*)\s*=/g;
 
     let match;
-    while ((match = assignmentRegex.exec(code)) !== null) {
+    while ((match = declRegex.exec(code)) !== null) {
       const varName = match[1];
       const matchIndex = match.index;
-      const position = document.positionAt(matchIndex);
-      const line = document.lineAt(position.line);
-      const insertLine = line.lineNumber + 1;
 
       this.addOperation(
         document,
         selection,
         varName,
-        insertLine,
+        matchIndex,
         logOperations,
       );
     }
 
     if (logOperations.length === 0) {
-      vscode.window.showInformationMessage("No variables found to log (Java).");
+      vscode.window.showInformationMessage(
+        "No variables found to log (Swift).",
+      );
       return;
     }
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = `${op.indent}System.out.println("${op.varName}: " + ${op.varName}); // [ACL]\n`;
+      // print("var: \(var)")
+      const logStatement = `${op.indent}print("${op.varName}: \\(${op.varName})") // [ACL]\n`;
       edit.insert(op.uri, op.position, logStatement);
     }
 
     await vscode.workspace.applyEdit(edit);
   }
 
-  addOperation(document, selection, varName, insertLine, logOperations) {
+  addOperation(document, selection, varName, matchIndex, logOperations) {
     if (this.shouldSkipVariable(varName)) return;
+
+    const position = document.positionAt(matchIndex);
+    const line = document.lineAt(position.line);
+    const insertLine = line.lineNumber + 1;
+
     if (insertLine >= document.lineCount) return;
+
+    let inScope = false;
+    if (!selection.isEmpty) {
+      const selectedText = document.getText(selection).trim();
+      if (varName === selectedText) inScope = true;
+    } else {
+      inScope = true;
+    }
+
+    if (!inScope) return;
+
     const lineText = document.lineAt(insertLine - 1).text;
     const indent = lineText.match(/^\s*/)?.[0] || "";
 
@@ -61,4 +76,4 @@ class JavaProvider extends LogProvider {
   }
 }
 
-module.exports = JavaProvider;
+module.exports = SwiftProvider;

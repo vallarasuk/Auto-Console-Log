@@ -58,6 +58,13 @@ class LogProvider {
       document.positionAt(end + 1),
     );
   }
+  shouldSkipVariable(varName) {
+    // Skip if starts with underscore (private/unused convention)
+    if (varName.startsWith("_")) return true;
+    // Skip specific keywords
+    if (["undefined", "null", "true", "false"].includes(varName)) return true;
+    return false;
+  }
 }
 
 module.exports = LogProvider;
