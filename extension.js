@@ -1,12 +1,12 @@
 const vscode = require("vscode");
-const ExtPay = require("./lib/extpay-vscode");
+// const ExtPay = require("./lib/extpay-vscode");
 const JsTsProvider = require("./providers/JsTsProvider");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
 
-// Global ExtPay instance
-const extpay = ExtPay("auto-console-log-by-vallarasu-kanthasamy");
+// // Global ExtPay instance
+// const extpay = ExtPay("auto-console-log-by-vallarasu-kanthasamy");
 
 // Provider Registry
 const providers = {
@@ -198,6 +198,7 @@ function activate(context) {
   // Auto-disable conflicting keybindings on first install/activation
   autoDisableConflictingKeybindings(context);
 
+  /*
   // Initialize ExtensionPay (background sync)
   extpay.startBackground(context);
 
@@ -219,13 +220,16 @@ function activate(context) {
       context.subscriptions.push(statusBarItem);
     }
   });
+  */
 
+  /*
   // Command to open payment page
   context.subscriptions.push(
     vscode.commands.registerCommand("extension.openPaymentPage", () => {
       extpay.openPaymentPage();
     }),
   );
+  */
 
   // Command to remove all console logs
   context.subscriptions.push(
@@ -358,7 +362,8 @@ async function generateLogStatement(document, contextName, varName, indent) {
   const proConfig = config.get("pro") || {};
 
   // Check Pro status
-  let isPro = false;
+  let isPro = true; // Temporary allow all users to use Pro features
+  /*
   try {
     const user = await extpay.getUser();
     isPro = user.paid;
@@ -374,6 +379,7 @@ async function generateLogStatement(document, contextName, varName, indent) {
   ) {
     isPro = true;
   }
+  */
 
   const suffix = " // [ACL]\n";
 

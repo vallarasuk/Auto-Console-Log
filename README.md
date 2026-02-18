@@ -105,6 +105,8 @@ _Note: The extension automatically detects the language based on the file extens
 ## 🔥 Features Recap
 
 ✅ One-shot shortcut logging  
+✅ **Custom Log Templates:** Define your own log format (Free for everyone)  
+✅ **Remote Logging:** Sync logs to an external URL (Free for everyone)  
 ✅ Custom log levels (`log`, `info`, `warn`, `error`)  
 ✅ Supports 9+ Languages (JS, Python, Java, Go, C++, Swift, PHP, C#, etc.)  
 ✅ Lightning-fast debugging for real projects  
