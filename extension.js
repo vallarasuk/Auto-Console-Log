@@ -6,7 +6,7 @@ const path = require("path");
 const os = require("os");
 
 // // Global ExtPay instance
-// const extpay = ExtPay("auto-console-log-by-vallarasu-kanthasamy");
+// const extpay = ExtPay("auto-console-log");
 
 // Provider Registry
 const providers = {
@@ -355,9 +355,7 @@ function activate(context) {
 // ─── Log Statement Generator ─────────────────────────────────────────────────
 
 async function generateLogStatement(document, contextName, varName, indent) {
-  const config = vscode.workspace.getConfiguration(
-    "autoConsoleLogByVallarasuKanthasamy",
-  );
+  const config = vscode.workspace.getConfiguration("autoConsoleLog");
   const logLevel = config.get("logLevel") || "info";
   const proConfig = config.get("pro") || {};
 
