@@ -19,11 +19,14 @@ class JsTsProvider extends LogProvider {
           "classProperties",
           "decorators-legacy",
           "dynamicImport",
+          "optionalChaining",
+          "nullishCoalescingOperator",
         ],
+        errorRecovery: true,
       });
     } catch (e) {
       vscode.window.showErrorMessage(
-        "Failed to parse file. Please fix syntax errors.",
+        "Failed to parse file. Please fix syntax errors first.",
       );
       console.error(e);
       return;
@@ -31,6 +34,8 @@ class JsTsProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     const logOperations = [];
+    // Track already-scheduled (line, varName) pairs to avoid duplicates
+    const scheduled = new Set();
 
     traverse(ast, {
       enter: (path) => {
@@ -38,35 +43,13 @@ class JsTsProvider extends LogProvider {
           const declarations = path.node.declarations;
           declarations.forEach((decl) => {
             const varsToLog = [];
-
-            if (decl.id.type === "Identifier") {
-              varsToLog.push(decl.id.name);
-            } else if (decl.id.type === "ObjectPattern") {
-              decl.id.properties.forEach((prop) => {
-                if (
-                  prop.type === "ObjectProperty" &&
-                  prop.value.type === "Identifier"
-                ) {
-                  varsToLog.push(prop.value.name);
-                } else if (
-                  prop.type === "ObjectProperty" &&
-                  prop.key.type === "Identifier" &&
-                  prop.shorthand
-                ) {
-                  varsToLog.push(prop.key.name);
-                }
-              });
-            } else if (decl.id.type === "ArrayPattern") {
-              decl.id.elements.forEach((elem) => {
-                if (elem && elem.type === "Identifier") {
-                  varsToLog.push(elem.name);
-                }
-              });
-            }
+            this.collectVarsFromPattern(decl.id, varsToLog);
 
             if (varsToLog.length === 0) return;
 
-            const insertLine = path.node.loc.end.line;
+            // Babel loc.end.line is 1-based. The line AFTER the declaration
+            // in 0-based terms is exactly loc.end.line (no adjustment needed).
+            const insertLine = path.node.loc.end.line; // 0-based index of next line
             const insertPos = new vscode.Position(insertLine, 0);
 
             varsToLog.forEach((varName) => {
@@ -74,7 +57,11 @@ class JsTsProvider extends LogProvider {
 
               if (!selection.isEmpty) {
                 const selectedText = document.getText(selection).trim();
-                if (varName === selectedText) {
+                // Support selecting just the variable name or the whole declaration
+                if (
+                  varName === selectedText ||
+                  selectedText.includes(varName)
+                ) {
                   inScope = true;
                 }
               } else {
@@ -94,11 +81,21 @@ class JsTsProvider extends LogProvider {
 
               if (!inScope) return;
               if (this.shouldSkipVariable(varName)) return;
+
+              const key = `${insertLine}:${varName}`;
+              if (scheduled.has(key)) return;
               if (this.hasConsoleLogInScope(document, insertLine, varName))
                 return;
 
+              scheduled.add(key);
+
               const contextName = this.getContextName(path);
-              const lineText = document.lineAt(insertLine - 1).text;
+              // Use the line where the declaration ends for indentation
+              const declLineIndex = path.node.loc.end.line - 1;
+              const lineText =
+                declLineIndex >= 0 && declLineIndex < document.lineCount
+                  ? document.lineAt(declLineIndex).text
+                  : "";
               const indent = lineText.match(/^\s*/)?.[0] || "";
 
               logOperations.push({
@@ -125,7 +122,6 @@ class JsTsProvider extends LogProvider {
         op.contextName,
         op.varName,
         op.indent,
-        // Pass a language specific log generator? Handled by common generateLogStatement for now.
       );
       edit.insert(op.uri, op.position, logStatement);
     }
@@ -136,6 +132,56 @@ class JsTsProvider extends LogProvider {
     }
   }
 
+  /**
+   * Recursively collect variable names from any pattern node.
+   * Handles: Identifier, ObjectPattern, ArrayPattern, RestElement, AssignmentPattern.
+   */
+  collectVarsFromPattern(node, result) {
+    if (!node) return;
+
+    switch (node.type) {
+      case "Identifier":
+        result.push(node.name);
+        break;
+
+      case "ObjectPattern":
+        node.properties.forEach((prop) => {
+          if (prop.type === "RestElement") {
+            // const { a, ...rest } = obj  →  log 'rest'
+            this.collectVarsFromPattern(prop.argument, result);
+          } else if (prop.type === "ObjectProperty") {
+            // const { key: value } = obj  →  log 'value'
+            // const { key } = obj  →  log 'key' (shorthand)
+            this.collectVarsFromPattern(prop.value, result);
+          }
+        });
+        break;
+
+      case "ArrayPattern":
+        node.elements.forEach((elem) => {
+          if (elem) {
+            if (elem.type === "RestElement") {
+              this.collectVarsFromPattern(elem.argument, result);
+            } else {
+              this.collectVarsFromPattern(elem, result);
+            }
+          }
+        });
+        break;
+
+      case "AssignmentPattern":
+        // const { a = defaultVal } = obj  →  log 'a'
+        this.collectVarsFromPattern(node.left, result);
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Build a human-readable context name like "MyClass > myMethod > "
+   */
   getContextName(path) {
     let p = path.scope.path;
     const parts = [];
@@ -143,10 +189,31 @@ class JsTsProvider extends LogProvider {
     while (p) {
       if (p.isFunctionDeclaration()) {
         if (p.node.id) parts.unshift(p.node.id.name);
-      } else if (p.isClassMethod()) {
-        if (p.node.key.type === "Identifier") parts.unshift(p.node.key.name);
-      } else if (p.isVariableDeclarator()) {
-        if (p.node.id.type === "Identifier") parts.unshift(p.node.id.name);
+      } else if (p.isArrowFunctionExpression() || p.isFunctionExpression()) {
+        // Arrow / function expression: look at the parent for a name
+        const parent = p.parentPath;
+        if (parent && parent.isVariableDeclarator() && parent.node.id) {
+          if (parent.node.id.type === "Identifier") {
+            parts.unshift(parent.node.id.name);
+          }
+        } else if (parent && parent.isObjectProperty()) {
+          if (parent.node.key && parent.node.key.type === "Identifier") {
+            parts.unshift(parent.node.key.name);
+          }
+        } else if (parent && parent.isAssignmentExpression()) {
+          if (
+            parent.node.left &&
+            parent.node.left.type === "MemberExpression"
+          ) {
+            parts.unshift(parent.node.left.property.name || "");
+          }
+        }
+      } else if (p.isClassMethod() || p.isObjectMethod()) {
+        if (p.node.key && p.node.key.type === "Identifier") {
+          parts.unshift(p.node.key.name);
+        }
+      } else if (p.isClassDeclaration() || p.isClassExpression()) {
+        if (p.node.id) parts.unshift(p.node.id.name);
       }
 
       p = p.parentPath;
@@ -155,6 +222,7 @@ class JsTsProvider extends LogProvider {
 
     return parts.length > 0 ? parts.join(" > ") + " > " : "";
   }
+
   shouldSkipVariable(varName) {
     // Check base specific skips first
     if (super.shouldSkipVariable(varName)) return true;
@@ -166,9 +234,30 @@ class JsTsProvider extends LogProvider {
         "context",
         "ref",
         "children",
-        "this",
         "window",
         "document",
+        "module",
+        "exports",
+        "require",
+        "process",
+        "console",
+        "global",
+        "Symbol",
+        "Promise",
+        "Array",
+        "Object",
+        "Number",
+        "String",
+        "Boolean",
+        "Math",
+        "Date",
+        "RegExp",
+        "Error",
+        "Map",
+        "Set",
+        "WeakMap",
+        "WeakSet",
+        "JSON",
       ].includes(varName)
     )
       return true;
@@ -176,11 +265,17 @@ class JsTsProvider extends LogProvider {
     return false;
   }
 
+  /**
+   * Check if a console.log for varName already exists within a few lines of insertLine.
+   */
   hasConsoleLogInScope(document, lineNumber, varName) {
-    if (lineNumber < document.lineCount) {
-      const nextLine = document.lineAt(lineNumber).text;
-      if (nextLine.includes(`console.`) && nextLine.includes(varName))
+    const windowSize = 5;
+    const end = Math.min(lineNumber + windowSize, document.lineCount);
+    for (let i = lineNumber; i < end; i++) {
+      const lineText = document.lineAt(i).text;
+      if (lineText.includes("console.") && lineText.includes(varName)) {
         return true;
+      }
     }
     return false;
   }

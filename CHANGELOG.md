@@ -6,6 +6,23 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.4.2] – 2026-02-18
+
+### Fixed
+
+- ⌨️ **Keybinding Conflict Auto-Resolution:**
+  - On installation/activation, the extension now **automatically disables conflicting keybindings** from VS Code built-ins and other extensions (e.g., `expandLineSelection` on `Ctrl+L`, Turbo Console Log's `Ctrl+L`).
+  - This ensures `Ctrl+L` (Add Log for Selection) and `Ctrl+Alt+L` (Add All Logs) work immediately after install — no manual keybinding setup required.
+  - Conflicting entries are written to the user's `keybindings.json` with a `-` prefix (VS Code's standard way to disable a binding).
+  - On extension deactivation/uninstall, the injected entries are automatically removed.
+- 🐛 **Python Log Removal:** Fixed `Remove All Console Logs` to also detect Python `# [ACL]` markers (previously only `// [ACL]` was matched).
+
+### Added
+
+- 🔧 **"Fix Keybinding Conflicts" Command:** Added a new command (`Auto Console Log: Fix Keybinding Conflicts`) in the Command Palette to manually re-apply the keybinding conflict resolution if the user resets their `keybindings.json`.
+
+---
+
 ## [0.4.0] – 2026-02-17
 
 ### Added

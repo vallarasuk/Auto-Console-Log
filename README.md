@@ -8,7 +8,7 @@
 </div>
 
 ![Built With](https://img.shields.io/badge/Built%20with-JavaScript-blue?style=flat-square&logo=javascript)
-![Maintained](https://img.shields.io/maintenance/yes/2025?color=green&style=flat-square)
+![Maintained](https://img.shields.io/maintenance/yes/2026?color=green&style=flat-square)
 ![Open Source](https://img.shields.io/badge/Open%20Source-Yes-brightgreen?style=flat-square)
 [![Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy)
 [![Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy)
@@ -66,6 +66,10 @@ Just hit the shortcut and BOOM 💥 — all variables in your file are automatic
 
 Or install from the [Marketplace →](https://marketplace.visualstudio.com/items?itemName=VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy)
 
+> ⚡ **Zero setup required!** On first install, the extension automatically disables conflicting keybindings (like VS Code's built-in `Ctrl+L` "Expand Line Selection") so your shortcuts work immediately.
+
+> 🔧 If shortcuts still don't work after install, open the Command Palette (`Ctrl+Shift+P`) and run **`Auto Console Log: Fix Keybinding Conflicts`**.
+
 ---
 
 ## ✅ Supported Languages & Log Formats
@@ -88,12 +92,13 @@ _Note: The extension automatically detects the language based on the file extens
 
 ## 🧪 Comparison Table
 
-| Feature              | Turbo Console Log ❄️        | Auto Console Log 🔥 (Yours) |
-| -------------------- | --------------------------- | --------------------------- |
-| Logging Method       | One by one manually         | All at once automatically   |
-| Productivity Boost   | 🐢 Medium                   | ⚡ High                     |
-| Output Style         | `console.log('var:', var);` | `console.log("var:", var);` |
-| Supported File Types | JS / TS / React             | JS / TS / React             |
+| Feature              | Turbo Console Log ❄️        | Auto Console Log 🔥 (Yours)                   |
+| -------------------- | --------------------------- | --------------------------------------------- |
+| Logging Method       | One by one manually         | All at once automatically                     |
+| Productivity Boost   | 🐢 Medium                   | ⚡ High                                       |
+| Output Style         | `console.log('var:', var);` | `console.log("var:", var);`                   |
+| Supported File Types | JS / TS / React             | JS, TS, Python, Java, C#, Go, PHP, C++, Swift |
+| Keybinding Conflicts | Manual fix required         | ✅ Auto-resolved on install                   |
 
 ---
 
@@ -101,8 +106,10 @@ _Note: The extension automatically detects the language based on the file extens
 
 ✅ One-shot shortcut logging  
 ✅ Custom log levels (`log`, `info`, `warn`, `error`)  
-✅ Supports 9+ Languages (JS, Python, Java, Go, C++, etc.)  
-✅ Lightning-fast debugging for real projects
+✅ Supports 9+ Languages (JS, Python, Java, Go, C++, Swift, PHP, C#, etc.)  
+✅ Lightning-fast debugging for real projects  
+✅ **Auto-disables conflicting keybindings on install** — works out of the box  
+✅ Manual keybinding fix via Command Palette (`Auto Console Log: Fix Keybinding Conflicts`)
 
 ---
 

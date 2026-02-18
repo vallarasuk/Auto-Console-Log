@@ -12,21 +12,34 @@ class PythonProvider extends LogProvider {
     const selection = editor.selection;
 
     const logOperations = [];
+    // Track (line, varName) to avoid duplicates
+    const scheduled = new Set();
 
-    // Regex for variable assignments: var = value
-    // Regex for function arguments: def func(arg1, arg2):
-    // Simplified regex approach
-    const assignmentRegex = /\b([a-zA-Z_]\w*)\s*=/g;
-    const functionRegex = /def\s+\w+\(([^)]+)\)/g;
+    // Regex for simple assignments: var = value (avoids ==, !=, <=, >=, +=, -=, etc.)
+    // Uses negative lookbehind for [=!<>+\-*/%&|^] and negative lookahead for =
+    const assignmentRegex = /^(\s*)([a-zA-Z_]\w*)\s*=[^=]/gm;
+
+    // Regex for augmented assignments (+=, -=, etc.) — we still want to log these
+    // Actually skip augmented assignments, they don't declare new variables
+
+    // Regex for function definitions: def func(arg1, arg2: type = default):
+    const functionRegex = /^(\s*)def\s+\w+\(([^)]*)\)\s*(?:->[^:]+)?:/gm;
+
+    // Regex for 'for' loop variables: for x in ...: or for x, y in ...:
+    const forLoopRegex =
+      /^(\s*)for\s+([a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*)\s+in\s+/gm;
+
+    // Regex for 'with' statement: with open(...) as f:
+    const withRegex = /^(\s*)with\s+.+?\s+as\s+([a-zA-Z_]\w*)\s*:/gm;
 
     let match;
 
-    // 1. Find assignments
+    // 1. Find simple assignments
     while ((match = assignmentRegex.exec(code)) !== null) {
-      const varName = match[1];
+      const baseIndent = match[1];
+      const varName = match[2];
       const matchIndex = match.index;
       const position = document.positionAt(matchIndex);
-      // Insert after the current line
       const line = document.lineAt(position.line);
       const insertLine = line.lineNumber + 1;
 
@@ -35,36 +48,100 @@ class PythonProvider extends LogProvider {
         selection,
         varName,
         insertLine,
+        baseIndent,
         logOperations,
+        scheduled,
       );
     }
 
     // 2. Find function arguments
     while ((match = functionRegex.exec(code)) !== null) {
-      const argsParams = match[1];
+      const funcIndent = match[1];
+      const argsParams = match[2];
       const matchIndex = match.index;
-      // Split args by comma, ignore defaults (=) and type hints (:)
-      // This is tricky with regex. Simple split by ',' might work for simple cases.
+      const position = document.positionAt(matchIndex);
+      const line = document.lineAt(position.line);
+      // Insert at the first line of the function body
+      const insertLine = line.lineNumber + 1;
+      // Body indent = function indent + 4 spaces
+      const bodyIndent = funcIndent + "    ";
+
+      if (!argsParams.trim()) continue;
+
       const args = argsParams.split(",").map((arg) => {
-        // Remove type hints and defaults
+        // Remove type hints (: Type) and defaults (= value) and strip whitespace
         return arg.split(":")[0].split("=")[0].trim();
       });
 
+      args.forEach((arg) => {
+        if (
+          arg &&
+          arg !== "self" &&
+          arg !== "cls" &&
+          arg !== "*" &&
+          arg !== "**"
+        ) {
+          // Remove leading * or ** from *args/**kwargs
+          const cleanArg = arg.replace(/^\*+/, "");
+          if (cleanArg) {
+            this.addOperation(
+              document,
+              selection,
+              cleanArg,
+              insertLine,
+              bodyIndent,
+              logOperations,
+              scheduled,
+            );
+          }
+        }
+      });
+    }
+
+    // 3. Find for-loop variables
+    while ((match = forLoopRegex.exec(code)) !== null) {
+      const baseIndent = match[1];
+      const varNames = match[2].split(",").map((v) => v.trim());
+      const matchIndex = match.index;
       const position = document.positionAt(matchIndex);
       const line = document.lineAt(position.line);
-      const insertLine = line.lineNumber + 1; // Assuming function body starts next line
+      const insertLine = line.lineNumber + 1;
+      const bodyIndent = baseIndent + "    ";
 
-      args.forEach((arg) => {
-        if (arg && arg !== "self" && arg !== "cls") {
+      varNames.forEach((varName) => {
+        if (varName) {
           this.addOperation(
             document,
             selection,
-            arg,
+            varName,
             insertLine,
+            bodyIndent,
             logOperations,
+            scheduled,
           );
         }
       });
+    }
+
+    // 4. Find 'with ... as var:' variables
+    while ((match = withRegex.exec(code)) !== null) {
+      const baseIndent = match[1];
+      const varName = match[2];
+      const matchIndex = match.index;
+      const position = document.positionAt(matchIndex);
+      const line = document.lineAt(position.line);
+      const insertLine = line.lineNumber + 1;
+      const bodyIndent = baseIndent + "    ";
+
+      this.addOperation(
+        document,
+        selection,
+        varName,
+        insertLine,
+        bodyIndent,
+        logOperations,
+        scheduled,
+      );
     }
 
     if (logOperations.length === 0) {
@@ -76,13 +153,6 @@ class PythonProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      // Custom python log generation?
-      // For now using the generic one which produces console.log.
-      // We need to override log generation or pass a custom one?
-      // The current shared generateLogStatement assumes console.log.
-      // We should probably adapt it or produce the string here.
-
-      // Let's create a python specific log statement here
       const logStatement = this.generatePythonLog(op.indent, op.varName);
       edit.insert(op.uri, op.position, logStatement);
     }
@@ -93,7 +163,15 @@ class PythonProvider extends LogProvider {
     }
   }
 
-  addOperation(document, selection, varName, insertLine, logOperations) {
+  addOperation(
+    document,
+    selection,
+    varName,
+    insertLine,
+    indent,
+    logOperations,
+    scheduled,
+  ) {
     if (this.shouldSkipVariable(varName)) return;
 
     let inScope = false;
@@ -101,12 +179,6 @@ class PythonProvider extends LogProvider {
       const selectedText = document.getText(selection).trim();
       if (varName === selectedText) inScope = true;
     } else {
-      // Basic scope check: is cursor near?
-      // For Python, "Global" means file level.
-      // If cursor is in the same function block?
-      // Regex doesn't easily give us function blocks.
-      // Let's default: if no selection, add all found vars?
-      // Or checks if cursor is in the same document (Global).
       inScope = true;
     }
 
@@ -115,19 +187,14 @@ class PythonProvider extends LogProvider {
     // Check if valid line
     if (insertLine >= document.lineCount) return;
 
-    const lineText = document.lineAt(insertLine - 1).text; // Line where var is defined
-    // Indent should match the NEXT line (where we insert), or the current line?
-    // In Python, if we define 'def foo():', the next line body has indent.
-    // If we have 'x = 1', next line has same indent.
+    // Deduplication
+    const key = `${insertLine}:${varName}`;
+    if (scheduled.has(key)) return;
 
-    // Simple heuristic: take indent of the definition line.
-    // If it's a function def, we might need to add indentation.
-    let indent = lineText.match(/^\s*/)?.[0] || "";
+    // Check if a print for this var already exists nearby
+    if (this.hasPrintInScope(document, insertLine, varName)) return;
 
-    // If previous line ends with ':', likely need to increase indent
-    if (lineText.trim().endsWith(":")) {
-      indent += "    "; // Assume 4 spaces? or detect?
-    }
+    scheduled.add(key);
 
     logOperations.push({
       uri: document.uri,
@@ -138,7 +205,23 @@ class PythonProvider extends LogProvider {
   }
 
   generatePythonLog(indent, varName) {
-    return `${indent}print(f"${varName}: {${varName}}") // [ACL]\n`;
+    // Use # for Python comments (not //)
+    return `${indent}print(f"${varName}: {${varName}}")  # [ACL]\n`;
+  }
+
+  /**
+   * Check if a print statement for varName already exists within a few lines.
+   */
+  hasPrintInScope(document, lineNumber, varName) {
+    const windowSize = 5;
+    const end = Math.min(lineNumber + windowSize, document.lineCount);
+    for (let i = lineNumber; i < end; i++) {
+      const lineText = document.lineAt(i).text;
+      if (lineText.includes("print(") && lineText.includes(varName)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -157,16 +240,15 @@ class PythonProvider extends LogProvider {
       if (currentLine.isEmptyOrWhitespace) continue;
 
       const currentIndent = (currentLine.text.match(/^\s*/) || [""])[0].length;
-      // If we find a line with less indentation, that's likely the start of the block definition (e.g. def foo():)
       if (currentIndent < indentSize && currentLine.text.trim().endsWith(":")) {
         startLine = i;
         break;
       }
     }
 
-    if (startLine === -1) return null; // Global scope or couldn't find parent
+    if (startLine === -1) return null;
 
-    // Search downwards for the end of the block (indentation returns to parent level)
+    // Search downwards for the end of the block
     let endLine = document.lineCount - 1;
     const parentIndent = (document.lineAt(startLine).text.match(/^\s*/) || [
       "",

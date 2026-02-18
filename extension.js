@@ -1,6 +1,9 @@
 const vscode = require("vscode");
 const ExtPay = require("./lib/extpay-vscode");
 const JsTsProvider = require("./providers/JsTsProvider");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 
 // Global ExtPay instance
 const extpay = ExtPay("auto-console-log-by-vallarasu-kanthasamy");
@@ -20,9 +23,180 @@ const providers = {
   swift: new (require("./providers/SwiftProvider"))(),
 };
 
-// Entry point - activate extension
+// ─── Keybinding Conflict Resolution ──────────────────────────────────────────
+
+/**
+ * Returns the path to VS Code's user keybindings.json file.
+ * Works on Windows, macOS, and Linux.
+ */
+function getKeybindingsFilePath() {
+  const home = os.homedir();
+  const platform = process.platform;
+
+  if (platform === "win32") {
+    return path.join(
+      process.env.APPDATA || path.join(home, "AppData", "Roaming"),
+      "Code",
+      "User",
+      "keybindings.json",
+    );
+  } else if (platform === "darwin") {
+    return path.join(
+      home,
+      "Library",
+      "Application Support",
+      "Code",
+      "User",
+      "keybindings.json",
+    );
+  } else {
+    // Linux
+    return path.join(home, ".config", "Code", "User", "keybindings.json");
+  }
+}
+
+/**
+ * Keybinding entries that conflict with Auto Console Log shortcuts.
+ * The "command" with a "-" prefix disables that specific binding.
+ *
+ * Conflicts we resolve:
+ *  - ctrl+l: VS Code built-in "expandLineSelection"
+ *  - ctrl+l: Turbo Console Log "turboConsoleLog.addLogMessage" (if installed)
+ *  - ctrl+alt+l: Some terminal/panel shortcuts
+ */
+const CONFLICTING_KEYBINDINGS = [
+  // Disable VS Code built-in "Expand Line Selection" on Ctrl+L
+  {
+    key: "ctrl+l",
+    command: "-expandLineSelection",
+    _acl_managed: true,
+  },
+  // Disable Turbo Console Log's Ctrl+L binding (if installed)
+  {
+    key: "ctrl+l",
+    command: "-turboConsoleLog.addLogMessage",
+    _acl_managed: true,
+  },
+  // Disable any other common Ctrl+L conflicts
+  {
+    key: "ctrl+l",
+    command: "-workbench.action.chat.openInEditor",
+    _acl_managed: true,
+  },
+];
+
+/**
+ * Reads the user's keybindings.json, injects our conflict-resolution entries
+ * (if not already present), and writes it back.
+ * Only runs once per install (tracked via globalState).
+ */
+function autoDisableConflictingKeybindings(context) {
+  const stateKey = "acl.keybindingsPatched.v1";
+  const alreadyPatched = context.globalState.get(stateKey, false);
+  if (alreadyPatched) return;
+
+  const keybindingsPath = getKeybindingsFilePath();
+
+  try {
+    // Ensure the directory exists
+    const dir = path.dirname(keybindingsPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Read existing keybindings (or start with empty array)
+    let existing = [];
+    if (fs.existsSync(keybindingsPath)) {
+      const raw = fs.readFileSync(keybindingsPath, "utf-8").trim();
+      if (raw && raw !== "") {
+        // Strip JSON comments (VS Code allows // comments in keybindings.json)
+        const stripped = raw
+          .replace(/\/\/[^\n]*/g, "")
+          .replace(/\/\*[\s\S]*?\*\//g, "");
+        try {
+          existing = JSON.parse(stripped);
+          if (!Array.isArray(existing)) existing = [];
+        } catch {
+          // If parse fails, back up and start fresh
+          fs.writeFileSync(keybindingsPath + ".acl-backup", raw, "utf-8");
+          existing = [];
+        }
+      }
+    }
+
+    // Remove any previously injected ACL entries (for clean re-injection)
+    existing = existing.filter((entry) => !entry._acl_managed);
+
+    // Add our conflict-resolution entries
+    let added = 0;
+    for (const entry of CONFLICTING_KEYBINDINGS) {
+      // Only add if not already present (by key+command pair)
+      const alreadyExists = existing.some(
+        (e) => e.key === entry.key && e.command === entry.command,
+      );
+      if (!alreadyExists) {
+        existing.push(entry);
+        added++;
+      }
+    }
+
+    if (added > 0) {
+      fs.writeFileSync(
+        keybindingsPath,
+        JSON.stringify(existing, null, 2),
+        "utf-8",
+      );
+      console.log(
+        `[Auto Console Log] Patched ${added} conflicting keybinding(s) in ${keybindingsPath}`,
+      );
+    }
+
+    // Mark as patched so we don't repeat on every activation
+    context.globalState.update(stateKey, true);
+  } catch (err) {
+    // Non-fatal: log but don't crash the extension
+    console.warn(
+      "[Auto Console Log] Could not auto-patch keybindings:",
+      err.message,
+    );
+  }
+}
+
+/**
+ * Removes all ACL-managed keybinding entries from the user's keybindings.json.
+ * Called on extension deactivation or when user explicitly requests cleanup.
+ */
+function removeConflictingKeybindingPatches() {
+  const keybindingsPath = getKeybindingsFilePath();
+  try {
+    if (!fs.existsSync(keybindingsPath)) return;
+    const raw = fs.readFileSync(keybindingsPath, "utf-8").trim();
+    if (!raw) return;
+    const stripped = raw
+      .replace(/\/\/[^\n]*/g, "")
+      .replace(/\/\*[\s\S]*?\*\//g, "");
+    let existing = JSON.parse(stripped);
+    if (!Array.isArray(existing)) return;
+    const filtered = existing.filter((e) => !e._acl_managed);
+    if (filtered.length !== existing.length) {
+      fs.writeFileSync(
+        keybindingsPath,
+        JSON.stringify(filtered, null, 2),
+        "utf-8",
+      );
+    }
+  } catch {
+    // Non-fatal
+  }
+}
+
+// ─── Entry Point ─────────────────────────────────────────────────────────────
+
 function activate(context) {
   console.log("Auto Console Log Extension Activated!");
+
+  // Auto-disable conflicting keybindings on first install/activation
+  autoDisableConflictingKeybindings(context);
 
   // Initialize ExtensionPay (background sync)
   extpay.startBackground(context);
@@ -64,10 +238,6 @@ function activate(context) {
       const provider = providers[languageId];
 
       if (!provider) {
-        // Fallback removal for unsupported languages?
-        // We can use a generic removal if we assume standard log formats or user-defined formats.
-        // For now, let's allow it if we know the language specific log format or just generic cleanup?
-        // Actually, let's keep it consistent: only support removal if we support the language OR if we add a GenericProvider.
         vscode.window.showInformationMessage(
           `Log removal not fully supported for ${languageId} yet.`,
         );
@@ -79,7 +249,6 @@ function activate(context) {
 
       // Determine scope for removal
       const cursorPosition = editor.selection.active;
-      // Use provider's scope detection
       const scopeRange = provider.getFunctionScopeRange(
         document,
         cursorPosition,
@@ -91,10 +260,10 @@ function activate(context) {
 
       for (let i = startLine; i < endLine; i++) {
         const line = document.lineAt(i);
-        // Match default logs or Pro logs with signature
         if (
-          line.text.includes("---------------------------->") ||
-          line.text.trim().endsWith("// [ACL]")
+          line.text.includes("----------------------------->") ||
+          line.text.trim().endsWith("// [ACL]") ||
+          line.text.trim().endsWith("# [ACL]")
         ) {
           logsToRemove.push(line.rangeIncludingLineBreak);
         }
@@ -165,14 +334,27 @@ function activate(context) {
       insertConsoleLogs,
     ),
   );
+
+  // Command to manually re-patch keybindings (useful if user resets their keybindings.json)
+  context.subscriptions.push(
+    vscode.commands.registerCommand("extension.fixKeybindingConflicts", () => {
+      // Reset the patched flag so it runs again
+      context.globalState.update("acl.keybindingsPatched.v1", false);
+      autoDisableConflictingKeybindings(context);
+      vscode.window.showInformationMessage(
+        "✅ Auto Console Log: Keybinding conflicts resolved. Restart VS Code if shortcuts still don't work.",
+      );
+    }),
+  );
 }
 
-// Helper: Generate Log Statement (Shared)
+// ─── Log Statement Generator ─────────────────────────────────────────────────
+
 async function generateLogStatement(document, contextName, varName, indent) {
   const config = vscode.workspace.getConfiguration(
     "autoConsoleLogByVallarasuKanthasamy",
   );
-  const logLevel = config.get("logLevel") || "info"; // log, info, warn, error
+  const logLevel = config.get("logLevel") || "info";
   const proConfig = config.get("pro") || {};
 
   // Check Pro status
@@ -181,7 +363,7 @@ async function generateLogStatement(document, contextName, varName, indent) {
     const user = await extpay.getUser();
     isPro = user.paid;
   } catch {
-    // console.error("Failed to check Pro status");
+    // ignore
   }
 
   // Developer Bypass
@@ -193,7 +375,6 @@ async function generateLogStatement(document, contextName, varName, indent) {
     isPro = true;
   }
 
-  // Suffix to identify logs for removal
   const suffix = " // [ACL]\n";
 
   if (isPro) {
@@ -225,15 +406,13 @@ async function generateLogStatement(document, contextName, varName, indent) {
 
   // Default Behavior
   const method = ["warn", "error"].includes(logLevel) ? logLevel : "log";
-  // Note: Some languages (python) might not use 'console.log'.
-  // We might need to delegate this generation to the provider or make it language-aware if it's not generic 'console.log'
-  // For JS/TS, this is fine. For others, we need logic.
-  // FIXME: Move log generation string construction to Provider or make this function language-aware?
-  // Current refactor only affects logic flow. `JsTsProvider` calls this.
-  return `${indent}console.${method}('${contextName}${varName} ---------------------------->', ${varName});${suffix}`;
+  return `${indent}console.${method}('${contextName}${varName} ----------------------------->',  ${varName});${suffix}`;
 }
 
-function deactivate() {}
+function deactivate() {
+  // Clean up our keybinding patches when extension is uninstalled/disabled
+  removeConflictingKeybindingPatches();
+}
 
 module.exports = {
   activate,
