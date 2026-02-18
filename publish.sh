@@ -5,11 +5,22 @@ set -e
 
 echo "🚀 Starting multi-marketplace publication for Auto Console Log..."
 
-# VS Code Marketplace Token
-VSCE_TOKEN="MIucUfA2jNltKKp0wvxur2aURn3NqsFyAM0kDOusEWwSr0ZeOphRJQQJ99CBACAAAAAAAAAAAAAGAZDOIDZF"
+# Load environment variables from .env file if it exists
+if [ -f .env ]; then
+  echo "📄 Loading environment variables from .env..."
+  export $(cat .env | grep -v '^#' | xargs)
+fi
 
-# Open VSX Token
-OVSX_TOKEN="ovsxat_03cfdab2-17a1-4e19-8745-152a5eb2e1ae"
+# Check if tokens are set
+if [ -z "$VSCE_TOKEN" ]; then
+  echo "❌ Error: VSCE_TOKEN is not set. Please set it in .env or as an environment variable."
+  exit 1
+fi
+
+if [ -z "$OVSX_TOKEN" ]; then
+  echo "❌ Error: OVSX_TOKEN is not set. Please set it in .env or as an environment variable."
+  exit 1
+fi
 
 echo "📦 Publishing to VS Code Marketplace..."
 npx vsce publish -p $VSCE_TOKEN

@@ -24,3 +24,5 @@ node_modules/@types/**
 node_modules/@vscode/test-cli/**
 node_modules/@vscode/test-electron/**
 node_modules/eslint/**
+.env
+.env.example
