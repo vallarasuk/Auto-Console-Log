@@ -10,8 +10,8 @@
 ![Built With](https://img.shields.io/badge/Built%20with-JavaScript-blue?style=flat-square&logo=javascript)
 ![Maintained](https://img.shields.io/maintenance/yes/2026?color=green&style=flat-square)
 ![Open Source](https://img.shields.io/badge/Open%20Source-Yes-brightgreen?style=flat-square)
-[![Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy)
-[![Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy)
+[![Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/vallarasuk.auto-console-log?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=vallarasuk.auto-console-log)
+[![Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/vallarasuk.auto-console-log?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=vallarasuk.auto-console-log)
 
 <!-- --- -->
 
@@ -64,7 +64,7 @@ Just hit the shortcut and BOOM 💥 — all variables in your file are automatic
 3. Click **Install**
 4. Done! 🎉
 
-Or install from the [Marketplace →](https://marketplace.visualstudio.com/items?itemName=VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy)
+Or install from the [Marketplace →](https://marketplace.visualstudio.com/items?itemName=vallarasuk.auto-console-log)
 
 > ⚡ **Zero setup required!** On first install, the extension automatically disables conflicting keybindings (like VS Code's built-in `Ctrl+L` "Expand Line Selection") so your shortcuts work immediately.
 
@@ -175,7 +175,7 @@ Fork this repo and create an issue to suggest features or improvements.
 <div align="center" style="padding: 35px; background: #111; border-radius: 18px; box-shadow: 0 0 30px #ff6f61;">
   <h2 style="color:#ff6f61;">🚀 Install & Slash Debug Time</h2>
   <p style="color:#eee; font-size:20px;">Automate logging and focus on solving problems — not typing logs.</p>
-  <a href="https://marketplace.visualstudio.com/items?itemName=VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy" target="_blank">
+  <a href="https://marketplace.visualstudio.com/items?itemName=vallarasuk.auto-console-log" target="_blank">
     <img src="https://img.shields.io/badge/Install%20Now-VS%20Code%20Marketplace-blue?style=for-the-badge" />
   </a>
 </div>
