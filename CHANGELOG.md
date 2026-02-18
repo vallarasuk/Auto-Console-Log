@@ -6,6 +6,15 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.5.2] – 2026-02-18
+
+### Changed
+
+- 🏷️ **Rebranded Identity:** Updated extension name to `auto-console-log` and publisher to `vallarasuk`.
+- ⚙️ **Refined Configuration:** Shortened configuration prefix to `autoConsoleLog` for easier access.
+
+---
+
 ## [0.5.1] – 2026-02-18
 
 ### Added
