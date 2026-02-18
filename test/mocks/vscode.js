@@ -16,9 +16,13 @@ class Uri {
   constructor(path) {
     this.path = path;
     this.fsPath = path;
+    this.scheme = "file";
   }
   static file(path) {
     return new Uri(path);
+  }
+  toString() {
+    return `file://${this.path}`;
   }
 }
 
@@ -32,23 +36,37 @@ class WorkspaceEdit {
   delete(uri, range) {
     this.edits.push({ type: "delete", uri, range });
   }
+  replace(uri, range, newText) {
+    this.edits.push({ type: "replace", uri, range, newText });
+  }
 }
 
 const window = {
-  showErrorMessage: (msg) => console.error("[Mock VSCode Error]", msg),
-  showInformationMessage: (msg) => console.log("[Mock VSCode Info]", msg),
-  activeTextEditor: null, // Set this in test runner
+  showErrorMessage: (msg) => {
+    console.error("[VSCode Error]", msg);
+    return Promise.resolve();
+  },
+  showInformationMessage: (msg) => {
+    console.log("[VSCode Info]", msg);
+    return Promise.resolve();
+  },
+  showWarningMessage: (msg) => {
+    console.warn("[VSCode Warn]", msg);
+    return Promise.resolve();
+  },
+  activeTextEditor: null,
 };
 
 const workspace = {
   applyEdit: async (edit) => {
-    // console.log("[Mock VSCode] applyEdit called with", edit.edits.length, "edits");
     return true;
   },
   getConfiguration: () => ({
     get: (key) => null,
   }),
 };
+
+const StatusBarAlignment = { Left: 1, Right: 2 };
 
 module.exports = {
   Position,
@@ -57,5 +75,5 @@ module.exports = {
   WorkspaceEdit,
   window,
   workspace,
-  StatusBarAlignment: { Right: 1 },
+  StatusBarAlignment,
 };
