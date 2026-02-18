@@ -16,3 +16,12 @@ implementation_plan.md
 task.md
 walkthrough.md
 **/*.ts
+test_files/**
+*.vsix
+build_vsix.sh
+run_tests.sh
+debug_destructuring.js
+node_modules/@types/**
+node_modules/@vscode/test-cli/**
+node_modules/@vscode/test-electron/**
+node_modules/eslint/**
