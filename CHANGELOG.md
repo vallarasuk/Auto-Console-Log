@@ -6,6 +6,15 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.4.3] – 2026-02-18
+
+### Fixed
+
+- 🚀 **Critical Fix: Extension Activation:** Fixed an issue where the extension failed to activate (showing "command not found") due to missing dependencies in the v0.4.2 bundle.
+- 📦 **VSIX Optimization:** Corrected `.vscodeignore` to properly include production dependencies while keeping the package size optimized.
+
+---
+
 ## [0.4.2] – 2026-02-18
 
 ### Fixed

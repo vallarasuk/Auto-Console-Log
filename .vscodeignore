@@ -9,7 +9,6 @@ vsc-extension-quickstart.md
 **/eslint.config.mjs
 **/.vscode-test.*
 src/**
-node_modules/**
 .git/**
 .github/**
 implementation_plan.md
