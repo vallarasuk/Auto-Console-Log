@@ -6,6 +6,22 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.5.0] – 2026-02-18
+
+### Added
+
+- 🎁 **Pro Features are now FREE!**
+  - All previously paid-only features are now available to all users for free.
+  - **Custom Log Templates:** Use placeholders like `{varName}`, `{file}`, `{line}`, and `{context}` to define the exact format of your console logs.
+  - **Remote Logging:** Configure a remote URL to send your logs to an external server for easier debugging of distributed systems or mobile apps.
+
+### Changed
+
+- 🧹 **Cleaned up extension interface:** Removed "Upgrade Logger Pro" buttons and payment prompts.
+- 🚀 **Optimization:** Streamlined activation events for faster extension startup.
+
+---
+
 ## [0.4.3] – 2026-02-18
 
 ### Fixed
