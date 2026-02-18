@@ -6,6 +6,19 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.5.1] – 2026-02-18
+
+### Added
+
+- 🔒 **Security Enhancement:** Moved marketplace tokens from `publish.sh` to a `.env` file for better security and flexibility.
+- 📄 **Environment Configuration:** Added `.env.example` as a template for easier setup in different environments.
+
+### Fixed
+
+- 📦 **Packaging Migration:** Updated `.vscodeignore` to ensure environment files are excluded from the published extension package.
+
+---
+
 ## [0.5.0] – 2026-02-18
 
 ### Added
