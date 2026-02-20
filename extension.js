@@ -252,15 +252,10 @@ function activate(context) {
       const logsToRemove = [];
 
       // Determine scope for removal
-      const cursorPosition = editor.selection.active;
-      const scopeRange = provider.getFunctionScopeRange(
-        document,
-        cursorPosition,
-      );
-
-      const isGlobal = !scopeRange;
-      const startLine = isGlobal ? 0 : scopeRange.start.line;
-      const endLine = isGlobal ? document.lineCount : scopeRange.end.line;
+      // Always use global scope for Remove All Console Logs
+      const isGlobal = true;
+      const startLine = 0;
+      const endLine = document.lineCount;
 
       for (let i = startLine; i < endLine; i++) {
         const line = document.lineAt(i);
@@ -326,6 +321,68 @@ function activate(context) {
     }
   };
 
+  const insertConsoleLogForSelection = async () => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      vscode.window.showErrorMessage("No active editor found!");
+      return;
+    }
+
+    const document = editor.document;
+    const selection = editor.selection;
+    if (selection.isEmpty) {
+      vscode.window.showInformationMessage("No text selected.");
+      return;
+    }
+
+    const varName = document.getText(selection).trim();
+    if (!varName) return;
+
+    const languageId = document.languageId;
+    const provider = providers[languageId];
+
+    if (!provider) {
+      vscode.window.showInformationMessage(
+        `Auto Console Log not supported for ${languageId} files.`,
+      );
+      return;
+    }
+
+    try {
+      const insertLine = selection.end.line + 1;
+      const lineText = document.lineAt(selection.end.line).text;
+      const indent = lineText.match(/^\s*/)?.[0] || "";
+
+      let logStatement = "";
+      if (typeof provider.getLogStatement === "function") {
+        logStatement = provider.getLogStatement(varName, indent);
+      } else {
+        // Fallback for JS/TS which uses the robust generateLogStatement
+        logStatement = await generateLogStatement(
+          document,
+          "",
+          varName,
+          indent,
+        );
+      }
+
+      const edit = new vscode.WorkspaceEdit();
+      edit.insert(
+        document.uri,
+        new vscode.Position(insertLine, 0),
+        logStatement,
+      );
+
+      const success = await vscode.workspace.applyEdit(edit);
+      if (!success) {
+        vscode.window.showErrorMessage("Failed to insert log for selection.");
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(`Error: ${error.message}`);
+      console.error("Extension error:", error);
+    }
+  };
+
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "extension.addConsoleLogs",
@@ -335,7 +392,7 @@ function activate(context) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "extension.addConsoleLogForSelection",
-      insertConsoleLogs,
+      insertConsoleLogForSelection,
     ),
   );
 

@@ -105,6 +105,8 @@ _Note: The extension automatically detects the language based on the file extens
 ## 🔥 Features Recap
 
 ✅ One-shot shortcut logging  
+✅ **Precision Selection Logging:** Highlight any variable and press `Ctrl + L` to log it securely on the next line.  
+✅ **File-wide Log Removal:** Press `Ctrl + Alt + R` to instantly clean up all auto-generated logs in your file.  
 ✅ **Custom Log Templates:** Define your own log format (Free for everyone)  
 ✅ **Remote Logging:** Sync logs to an external URL (Free for everyone)  
 ✅ Custom log levels (`log`, `info`, `warn`, `error`)  

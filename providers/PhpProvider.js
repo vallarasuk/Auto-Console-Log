@@ -107,7 +107,7 @@ class PhpProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = `${op.indent}error_log("${op.varName}: " . print_r(${op.varName}, true)); // [ACL]\n`;
+      const logStatement = this.getLogStatement(op.varName, op.indent);
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -157,6 +157,10 @@ class PhpProvider extends LogProvider {
       varName,
       indent,
     });
+  }
+
+  getLogStatement(varName, indent) {
+    return `${indent}error_log("${varName}: " . print_r(${varName}, true)); // [ACL]\n`;
   }
 }
 

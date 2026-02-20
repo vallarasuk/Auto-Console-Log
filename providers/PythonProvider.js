@@ -4,9 +4,8 @@ const LogProvider = require("./LogProvider");
 class PythonProvider extends LogProvider {
   /**
    * @param {vscode.TextEditor} editor
-   * @param {Function} generateLogStatement
    */
-  async insertConsoleLogs(editor, generateLogStatement) {
+  async insertConsoleLogs(editor) {
     const document = editor.document;
     const code = document.getText();
     const selection = editor.selection;
@@ -153,7 +152,7 @@ class PythonProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = this.generatePythonLog(op.indent, op.varName);
+      const logStatement = this.getLogStatement(op.varName, op.indent);
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -204,7 +203,7 @@ class PythonProvider extends LogProvider {
     });
   }
 
-  generatePythonLog(indent, varName) {
+  getLogStatement(varName, indent) {
     // Use # for Python comments (not //)
     return `${indent}print(f"${varName}: {${varName}}")  # [ACL]\n`;
   }

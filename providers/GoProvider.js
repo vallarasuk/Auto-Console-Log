@@ -95,7 +95,7 @@ class GoProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = `${op.indent}fmt.Printf("${op.varName}: %+v\\n", ${op.varName}) // [ACL]\n`;
+      const logStatement = this.getLogStatement(op.varName, op.indent);
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -144,6 +144,10 @@ class GoProvider extends LogProvider {
       varName,
       indent,
     });
+  }
+
+  getLogStatement(varName, indent) {
+    return `${indent}fmt.Printf("${varName}: %+v\\n", ${varName}) // [ACL]\n`;
   }
 }
 
