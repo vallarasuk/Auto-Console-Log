@@ -86,7 +86,7 @@ class SwiftProvider extends LogProvider {
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
       // Swift string interpolation: \(varName)
-      const logStatement = `${op.indent}print("${op.varName}: \\(${op.varName})") // [ACL]\n`;
+      const logStatement = this.getLogStatement(op.varName, op.indent);
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -135,6 +135,10 @@ class SwiftProvider extends LogProvider {
       varName,
       indent,
     });
+  }
+
+  getLogStatement(varName, indent) {
+    return `${indent}print("${varName}: \\(${varName})") // [ACL]\n`;
   }
 }
 

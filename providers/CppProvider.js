@@ -156,7 +156,7 @@ class CppProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = `${op.indent}std::cout << "${op.varName}: " << ${op.varName} << std::endl; // [ACL]\n`;
+      const logStatement = this.getLogStatement(op.varName, op.indent);
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -206,6 +206,10 @@ class CppProvider extends LogProvider {
       varName,
       indent,
     });
+  }
+
+  getLogStatement(varName, indent) {
+    return `${indent}std::cout << "${varName}: " << ${varName} << std::endl; // [ACL]\n`;
   }
 }
 

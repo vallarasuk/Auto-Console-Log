@@ -6,6 +6,16 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.5.4] – 2026-02-20
+
+### Fixed
+
+- 🎯 **Selection Logging:** "Add Console Log for Selection" now accurately logs exactly the variable you highlight and places the log precisely on the next line (previously inserted at declaration).
+- 🧹 **File-Wide Log Removal:** "Remove All Console Logs" now strictly defaults to removing all generated logs across the entire file, avoiding confusion with scope-restricted removals.
+- 🛠️ **Provider Interface:** Extracted a standardized `getLogStatement` method for cleaner log generation across 9+ supported languages.
+
+---
+
 ## [0.5.2] – 2026-02-18
 
 ### Changed
