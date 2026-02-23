@@ -6,6 +6,14 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.5.5] – 2026-02-23
+
+### Fixed
+
+- 🪚 **Multi-line Log Removal:** Resolved syntax errors caused by code formatters (like Prettier or Black). "Remove All Console Logs" now properly detects and removes log statements that span across multiple lines across all supported languages (`error_log`, `fmt.Printf`, `Console.WriteLine`, etc).
+
+---
+
 ## [0.5.4] – 2026-02-20
 
 ### Fixed

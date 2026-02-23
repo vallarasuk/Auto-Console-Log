@@ -259,12 +259,52 @@ function activate(context) {
 
       for (let i = startLine; i < endLine; i++) {
         const line = document.lineAt(i);
+        const text = line.text.trim();
+
         if (
-          line.text.includes("----------------------------->") ||
-          line.text.trim().endsWith("// [ACL]") ||
-          line.text.trim().endsWith("# [ACL]")
+          text.endsWith("// [ACL]") ||
+          text.endsWith("# [ACL]") ||
+          text.endsWith("/* [ACL] */") ||
+          text.endsWith("<!-- [ACL] -->")
         ) {
-          logsToRemove.push(line.rangeIncludingLineBreak);
+          let startIndex = i;
+
+          // Look backward up to 20 lines to find the start of the log statement
+          for (let j = i; j >= Math.max(0, i - 20); j--) {
+            const prevText = document.lineAt(j).text;
+            const trimmedPrev = prevText.trim();
+
+            if (
+              j !== i &&
+              (trimmedPrev.endsWith("// [ACL]") ||
+                trimmedPrev.endsWith("# [ACL]") ||
+                trimmedPrev.endsWith("/* [ACL] */") ||
+                trimmedPrev.endsWith("<!-- [ACL] -->"))
+            ) {
+              // We hit the end of an older log, so the start of THIS log must be after it
+              break;
+            }
+
+            const isStartPattern =
+              /^\s*(?:(?:[a-zA-Z0-9_$]+\.)?(?:log|warn|error|info|debug|dir|println|WriteLine|Printf|Println)\s*\(|console\.|print|System\.|Console\.|fmt\.|echo|error_log|std::cout|NSLog|fetch|Log\.)/.test(
+                prevText,
+              );
+
+            if (
+              prevText.includes("----------------------------->") ||
+              isStartPattern
+            ) {
+              startIndex = j;
+              // If we found the actual method call, we can stop looking backward
+              if (isStartPattern) {
+                break;
+              }
+            }
+          }
+
+          const startPos = document.lineAt(startIndex).range.start;
+          const endPos = line.rangeIncludingLineBreak.end;
+          logsToRemove.push(new vscode.Range(startPos, endPos));
         }
       }
 
@@ -416,6 +456,12 @@ async function generateLogStatement(document, contextName, varName, indent) {
   const logLevel = config.get("logLevel") || "info";
   const proConfig = config.get("pro") || {};
 
+  // Clean varName for use inside a single-line string literal
+  const safeVarName = varName
+    .replace(/\r?\n|\r/g, " ")
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"');
+
   // Check Pro status
   let isPro = true; // Temporary allow all users to use Pro features
   /*
@@ -445,7 +491,7 @@ async function generateLogStatement(document, contextName, varName, indent) {
       const payload = `{
     file: "${document.fileName.replace(/\\/g, "\\\\\\\\")}",
     line: ${contextName ? '"' + contextName + '"' : "null"},
-    var: "${varName}",
+    var: "${safeVarName}",
     value: ${varName},
     timestamp: new Date().toISOString()
 }`;
@@ -455,7 +501,11 @@ async function generateLogStatement(document, contextName, varName, indent) {
     // 2. Custom Templates
     if (proConfig.logTemplate && proConfig.logTemplate.trim() !== "") {
       let template = proConfig.logTemplate;
-      template = template.replace(/{varName}/g, varName);
+      // We pass the unescaped varName here to keep compatibility, or just safeVarName?
+      // For custom templates it's safer to use the one without newlines, but we shouldn't add escape chars
+      // since we don't know the context (console.log vs backticks).
+      const templateVarName = varName.replace(/\r?\n|\r/g, " ");
+      template = template.replace(/{varName}/g, templateVarName);
       template = template.replace(/{file}/g, document.fileName);
       template = template.replace(
         /{context}/g,
@@ -467,7 +517,9 @@ async function generateLogStatement(document, contextName, varName, indent) {
 
   // Default Behavior
   const method = ["warn", "error"].includes(logLevel) ? logLevel : "log";
-  return `${indent}console.${method}('${contextName}${varName} ----------------------------->',  ${varName});${suffix}`;
+  // Only needs single-quote escape since we use single-quote wrapping
+  const labelVarName = varName.replace(/\r?\n|\r/g, " ").replace(/'/g, "\\'");
+  return `${indent}console.${method}('${contextName}${labelVarName} ----------------------------->',  ${varName});${suffix}`;
 }
 
 function deactivate() {
