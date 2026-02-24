@@ -391,7 +391,49 @@ function activate(context) {
     try {
       const insertLine = selection.end.line + 1;
       const lineText = document.lineAt(selection.end.line).text;
-      const indent = lineText.match(/^\s*/)?.[0] || "";
+      let indent = lineText.match(/^\s*/)?.[0] || "";
+
+      // Smart indent: try to inherit from the next non-empty line
+      let foundBetterIndent = false;
+      let i = insertLine;
+      while (i < document.lineCount && document.lineAt(i).text.trim() === "") {
+        i++;
+      }
+      if (i < document.lineCount) {
+        const nextText = document.lineAt(i).text;
+        const nextIndent = nextText.match(/^\s*/)?.[0] || "";
+        if (
+          nextIndent.length > indent.length &&
+          !/^[}\])>]/.test(nextText.trim())
+        ) {
+          indent = nextIndent;
+          foundBetterIndent = true;
+        }
+      }
+
+      // If next line didn't help, check if current line opens a block
+      if (!foundBetterIndent) {
+        const cleanedLineText = lineText
+          .split("//")[0]
+          .split("/*")[0]
+          .split("#")[0]
+          .trim();
+        if (
+          cleanedLineText.endsWith("{") ||
+          cleanedLineText.endsWith("(") ||
+          cleanedLineText.endsWith("[") ||
+          cleanedLineText.endsWith(":") ||
+          cleanedLineText.endsWith("do") ||
+          cleanedLineText.endsWith("then") ||
+          cleanedLineText.endsWith("?") ||
+          cleanedLineText.match(/=>$/)
+        ) {
+          const tabSize = Number(editor.options.tabSize) || 4;
+          const insertSpaces = editor.options.insertSpaces !== false;
+          const extraIndent = insertSpaces ? " ".repeat(tabSize) : "\t";
+          indent += extraIndent;
+        }
+      }
 
       let logStatement = "";
       if (typeof provider.getLogStatement === "function") {

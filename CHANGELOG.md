@@ -6,6 +6,14 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.5.6] – 2026-02-24
+
+### Fixed
+
+- 🧲 **Smart Log Placement:** "Add Console Log for Selection" now uses a smart heuristic to calculate the exact correct indentation level when inserting logs. It perfectly handles block openers like `{`, `(`, `[`, `:`, `do`, `then`, `=>`, and `?` — automatically adjusting your `console.log` indentation based on your VS Code `tabSize` and `insertSpaces` settings.
+
+---
+
 ## [0.5.5] – 2026-02-23
 
 ### Fixed
