@@ -6,6 +6,17 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.5.7] – 2026-02-25
+
+### Fixed
+
+- 🎯 **Terminal-Safe Logging:** "Add Console Log for Selection" now detects terminal statements like `return`, `throw`, `break`, and `continue` even when placed after a conditional (e.g., `if (foo) return bar;`). Logs are now accurately inserted _before_ the entire line for these cases.
+- 🪚 **Same-Line Declaration Fix:** For JS/TS, batch log insertion now correctly splits lines where a terminal statement follows a variable declaration on the same line.
+- 🐛 **Configuration Fix:** Resolved an issue where settings were not being correctly read from the `autoConsoleLogByVallarasuKanthasamy` configuration namespace.
+- 🏷️ **Babel Typing:** Fixed a TypeScript compatibility warning in `JsTsProvider.js`.
+
+---
+
 ## [0.5.6] – 2026-02-24
 
 ### Fixed
