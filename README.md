@@ -112,6 +112,7 @@ _Note: The extension automatically detects the language based on the file extens
 ✅ Custom log levels (`log`, `info`, `warn`, `error`)  
 ✅ Supports 9+ Languages (JS, Python, Java, Go, C++, Swift, PHP, C#, etc.)  
 ✅ **Multi-line Formatter Resilient:** Safely adds and removes console logs even if code formatters (like Prettier) split them across multiple lines.
+✅ **Terminal-Safe Logging:** Intelligently handles `return`, `throw`, and other terminal statements by placing logs where they will actually execute.
 ✅ Lightning-fast debugging for real projects  
 ✅ **Auto-disables conflicting keybindings on install** — works out of the box  
 ✅ Manual keybinding fix via Command Palette (`Auto Console Log: Fix Keybinding Conflicts`)

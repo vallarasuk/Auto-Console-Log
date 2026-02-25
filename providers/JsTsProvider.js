@@ -8,6 +8,7 @@ class JsTsProvider extends LogProvider {
     const document = editor.document;
     const selection = editor.selection;
     const code = document.getText();
+    /** @type {any} */
     let ast;
 
     try {
@@ -47,10 +48,36 @@ class JsTsProvider extends LogProvider {
 
             if (varsToLog.length === 0) return;
 
-            // Babel loc.end.line is 1-based. The line AFTER the declaration
-            // in 0-based terms is exactly loc.end.line (no adjustment needed).
-            const insertLine = path.node.loc.end.line; // 0-based index of next line
-            const insertPos = new vscode.Position(insertLine, 0);
+            // Babel loc.end.line is 1-based.
+            const endLineIndex = path.node.loc.end.line - 1;
+            const lineText = document.lineAt(endLineIndex).text;
+            const textAfterDecl = lineText
+              .substring(path.node.loc.end.column)
+              .trim();
+
+            let insertLine = path.node.loc.end.line;
+            let insertPos = new vscode.Position(insertLine, 0);
+            let indent = lineText.match(/^\s*/)?.[0] || "";
+
+            // If there's a terminal statement on the same line after the declaration,
+            // we should try to insert the log BEFORE that statement.
+            // For simplicity and to avoid complex line splitting, if we detect
+            // a terminal keyword on the same line, we insert the log ON THE PREVIOUS LINE
+            // if the declaration started on a previous line, OR we just accept it might be tricky.
+            // Actually, the most robust way is to check if the NEXT statement is a return.
+
+            // We check for terminal keywords that are NOT property-like (not preceded by a dot).
+            const isTerminalAfter =
+              /(?:^|\s|;|{)(return|throw|break|continue)\b/.test(textAfterDecl);
+            if (isTerminalAfter) {
+              // Insert AFTER the declaration semicolon but BEFORE the rest of the line
+              insertPos = new vscode.Position(
+                endLineIndex,
+                path.node.loc.end.column,
+              );
+              // Mark this op to prepend a newline so it doesn't stay on the same line as the decl
+              // We'll manage this by passing a slightly modified indent
+            }
 
             varsToLog.forEach((varName) => {
               let inScope = false;
@@ -90,13 +117,6 @@ class JsTsProvider extends LogProvider {
               scheduled.add(key);
 
               const contextName = this.getContextName(path);
-              // Use the line where the declaration ends for indentation
-              const declLineIndex = path.node.loc.end.line - 1;
-              const lineText =
-                declLineIndex >= 0 && declLineIndex < document.lineCount
-                  ? document.lineAt(declLineIndex).text
-                  : "";
-              const indent = lineText.match(/^\s*/)?.[0] || "";
 
               logOperations.push({
                 uri: document.uri,
@@ -123,7 +143,13 @@ class JsTsProvider extends LogProvider {
         op.varName,
         op.indent,
       );
-      edit.insert(op.uri, op.position, logStatement);
+
+      // If we are inserting at a column (same-line terminal statement),
+      // prepend a newline to the log statement.
+      const finalLogStatement =
+        op.position.character > 0 ? "\n" + logStatement : logStatement;
+
+      edit.insert(op.uri, op.position, finalLogStatement);
     }
 
     const success = await vscode.workspace.applyEdit(edit);
