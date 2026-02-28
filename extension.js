@@ -391,7 +391,7 @@ function activate(context) {
     try {
       const selectionStartLine = selection.start.line;
       const selectionEndLine = selection.end.line;
-      const lineText = document.lineAt(selectionEndLine).text;
+      let lineText = document.lineAt(selectionEndLine).text;
 
       // Determine if we should insert BEFORE or AFTER the current line
       // Terminal statements: if we log a variable in a return, we want the log BEFORE the return
@@ -405,7 +405,46 @@ function activate(context) {
       if (isTerminalStatement) {
         insertLine = selectionStartLine;
       } else {
-        insertLine = selectionEndLine + 1;
+        insertLine = selectionEndLine;
+
+        // Bracket balancing heuristic to find the true end of the statement
+        let openParens = 0,
+          openBraces = 0,
+          openBrackets = 0;
+
+        const processLine = (t) => {
+          // Remove string literals and basic inline comments to avoid false brackets
+          const s = t
+            .replace(/'[^']*'/g, "")
+            .replace(/"[^"]*"/g, "")
+            .replace(/\/\/.*/, "")
+            .replace(/#.*/, "");
+          for (const char of s) {
+            if (char === "(") openParens++;
+            else if (char === ")") openParens = Math.max(0, openParens - 1);
+            else if (char === "{") openBraces++;
+            else if (char === "}") openBraces = Math.max(0, openBraces - 1);
+            else if (char === "[") openBrackets++;
+            else if (char === "]") openBrackets = Math.max(0, openBrackets - 1);
+          }
+        };
+
+        processLine(lineText);
+
+        while (
+          insertLine < document.lineCount - 1 &&
+          (openParens > 0 ||
+            openBraces > 0 ||
+            openBrackets > 0 ||
+            lineText.trim().endsWith(","))
+        ) {
+          insertLine++;
+          lineText = document.lineAt(insertLine).text;
+          processLine(lineText);
+        }
+
+        // Insert at the line following the end of the statement
+        insertLine++;
 
         // Smart indent: try to inherit from the next non-empty line
         let foundBetterIndent = false;

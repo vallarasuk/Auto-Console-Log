@@ -6,6 +6,14 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.5.8] – 2026-02-28
+
+### Fixed
+
+- 🪚 **Multiline Statement Log Placement:** "Add Console Log for Selection" now correctly detects the true end of multiline statements (e.g. `await get(\n...\n);`) by dynamically balancing brackets, braces, and parentheses before inserting the log.
+
+---
+
 ## [0.5.7] – 2026-02-25
 
 ### Fixed

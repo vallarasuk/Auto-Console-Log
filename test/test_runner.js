@@ -206,6 +206,10 @@ async function runTest(testName, filePath, languageId, options = {}) {
     console.log(
       `❌ FAILED (expected ≥${minExpected}, got ${capturedEdits.length})`,
     );
+    capturedEdits.forEach((e) => {
+      const preview = (e.newText || "").trim().substring(0, 80);
+      console.log(`     Line ${e.position.line}: ${preview}`);
+    });
     totalFailed++;
   }
 }
@@ -247,6 +251,17 @@ async function main() {
     path.join(testDir, "test_ts_generics.ts"),
     "typescript",
     { minExpected: 2, description: "generic types & async/await" },
+  );
+  await runTest(
+    "JS Multiline Async",
+    path.join(testDir, "test_async_multiline.js"),
+    "javascript",
+    {
+      minExpected: 1,
+      description: "multiline await",
+      cursorLine: 3,
+      selectionText: "response",
+    },
   );
 
   // ── Python ───────────────────────────────────────────────────
