@@ -431,12 +431,41 @@ function activate(context) {
 
         processLine(lineText);
 
+        const isContinuation = (t) => {
+          const trimmed = t
+            .replace(/\/\/.*$/, "")
+            .replace(/#.*$/, "")
+            .replace(/\/\*.*?\*\//g, "")
+            .trim();
+          return (
+            trimmed.endsWith(",") ||
+            trimmed.endsWith("=") ||
+            trimmed.endsWith("+") ||
+            trimmed.endsWith("-") ||
+            trimmed.endsWith("*") ||
+            trimmed.endsWith("/") ||
+            trimmed.endsWith("%") ||
+            trimmed.endsWith("&") ||
+            trimmed.endsWith("|") ||
+            trimmed.endsWith("^") ||
+            trimmed.endsWith("<") ||
+            trimmed.endsWith(">") ||
+            trimmed.endsWith("?") ||
+            trimmed.endsWith(":") ||
+            trimmed.endsWith("&&") ||
+            trimmed.endsWith("||") ||
+            trimmed.endsWith("??") ||
+            trimmed.endsWith(".") ||
+            trimmed.endsWith("\\")
+          );
+        };
+
         while (
           insertLine < document.lineCount - 1 &&
           (openParens > 0 ||
             openBraces > 0 ||
             openBrackets > 0 ||
-            lineText.trim().endsWith(","))
+            isContinuation(lineText))
         ) {
           insertLine++;
           lineText = document.lineAt(insertLine).text;
