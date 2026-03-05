@@ -6,11 +6,16 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
-## [0.5.8] – 2026-02-28
+## [0.5.9] – 2026-03-05
 
 ### Fixed
 
-- 🪚 **Multiline Statement Log Placement:** "Add Console Log for Selection" now correctly detects the true end of multiline statements (e.g. `await get(\n...\n);`) by dynamically balancing brackets, braces, and parentheses before inserting the log.
+- 🚀 **Advanced Multiline Detection:** "Add Console Log for Selection" now identifies the true end of complex multiline statements, including those using continuation operators (`=`, `+`, `&&`, etc.) and Python's backslash (`\`) continuation.
+- 🧹 **Test Consolidation:** Cleaned up and consolidated test reproduction files.
+
+---
+
+## [0.5.8] – 2026-02-28
 
 ---
 
