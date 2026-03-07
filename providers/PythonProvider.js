@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const LogProvider = require("./LogProvider");
+const { generateLogStatement } = require("../extension");
 
 class PythonProvider extends LogProvider {
   /**
@@ -50,6 +51,7 @@ class PythonProvider extends LogProvider {
         baseIndent,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
@@ -91,6 +93,7 @@ class PythonProvider extends LogProvider {
               bodyIndent,
               logOperations,
               scheduled,
+              line.lineNumber,
             );
           }
         }
@@ -117,6 +120,7 @@ class PythonProvider extends LogProvider {
             bodyIndent,
             logOperations,
             scheduled,
+            line.lineNumber,
           );
         }
       });
@@ -140,6 +144,7 @@ class PythonProvider extends LogProvider {
         bodyIndent,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
@@ -152,7 +157,13 @@ class PythonProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = this.getLogStatement(op.varName, op.indent);
+      const logStatement = await generateLogStatement(
+        document,
+        "",
+        op.varName,
+        op.indent,
+        op.declarationLine,
+      );
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -170,6 +181,7 @@ class PythonProvider extends LogProvider {
     indent,
     logOperations,
     scheduled,
+    declarationLine,
   ) {
     if (this.shouldSkipVariable(varName)) return;
 
@@ -200,6 +212,7 @@ class PythonProvider extends LogProvider {
       position: new vscode.Position(insertLine, 0),
       varName,
       indent,
+      declarationLine,
     });
   }
 

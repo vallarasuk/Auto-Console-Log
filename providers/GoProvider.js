@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const LogProvider = require("./LogProvider");
+const { generateLogStatement } = require("../extension");
 
 class GoProvider extends LogProvider {
   async insertConsoleLogs(editor) {
@@ -13,7 +14,6 @@ class GoProvider extends LogProvider {
     const varDeclRegex = /^\s*var\s+([a-zA-Z_]\w*)\s+/gm;
 
     // Short declarations: x := ... or x, y := ...
-    // Captures all variable names on the left side of :=
     const shortDeclRegex = /^\s*((?:[a-zA-Z_]\w*\s*,\s*)*[a-zA-Z_]\w*)\s*:=/gm;
 
     // For-range: for k, v := range ...
@@ -36,10 +36,11 @@ class GoProvider extends LogProvider {
         insertLine,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
-    // 2. Short declarations (single and multi-variable)
+    // 2. Short declarations
     while ((match = shortDeclRegex.exec(code)) !== null) {
       const varNames = match[1]
         .split(",")
@@ -50,7 +51,6 @@ class GoProvider extends LogProvider {
       const insertLine = line.lineNumber + 1;
 
       varNames.forEach((varName) => {
-        // Skip blank identifier _
         if (varName !== "_") {
           this.addOperation(
             document,
@@ -59,12 +59,13 @@ class GoProvider extends LogProvider {
             insertLine,
             logOperations,
             scheduled,
+            line.lineNumber,
           );
         }
       });
     }
 
-    // 3. For-range variables (avoid double-logging if already caught by shortDecl)
+    // 3. For-range variables
     while ((match = forRangeRegex.exec(code)) !== null) {
       const varNames = match[1]
         .split(",")
@@ -83,6 +84,7 @@ class GoProvider extends LogProvider {
             insertLine,
             logOperations,
             scheduled,
+            line.lineNumber,
           );
         }
       });
@@ -95,7 +97,13 @@ class GoProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = this.getLogStatement(op.varName, op.indent);
+      const logStatement = await generateLogStatement(
+        document,
+        "",
+        op.varName,
+        op.indent,
+        op.declarationLine,
+      );
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -109,6 +117,7 @@ class GoProvider extends LogProvider {
     insertLine,
     logOperations,
     scheduled,
+    declarationLine,
   ) {
     if (this.shouldSkipVariable(varName)) return;
     if (insertLine >= document.lineCount) return;
@@ -143,6 +152,7 @@ class GoProvider extends LogProvider {
       position: new vscode.Position(insertLine, 0),
       varName,
       indent,
+      declarationLine,
     });
   }
 

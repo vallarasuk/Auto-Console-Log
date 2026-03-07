@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const LogProvider = require("./LogProvider");
+const { generateLogStatement } = require("../extension");
 
 // C# keywords that should never be treated as variable names
 const CSHARP_KEYWORDS = new Set([
@@ -106,7 +107,8 @@ const CSHARP_KEYWORDS = new Set([
   "Decimal",
   "Char",
   "Byte",
-  "Console",
+  "Short",
+  "Number",
   "Math",
   "Array",
   "List",
@@ -126,12 +128,11 @@ class CSharpProvider extends LogProvider {
     const logOperations = [];
     const scheduled = new Set();
 
-    // Match typed declarations: Type varName = ... or var varName = ...
-    // Handles: int x = 10; string name = "foo"; var result = ...; List<T> items = ...
+    // Match typed declarations
     const typedDeclRegex =
       /^\s*(?:(?:readonly|static|private|public|protected|internal|override|virtual|sealed|abstract|const|volatile)\s+)*(?:var|[A-Za-z][a-zA-Z0-9_]*(?:<[^>]*>)?(?:\[\])*\??)\s+([a-z_][a-zA-Z0-9_]*)\s*(?:=|;)/gm;
 
-    // Foreach variable: foreach (Type varName in collection)
+    // Foreach variable
     const foreachRegex =
       /\bforeach\s*\(\s*(?:var|[A-Za-z][a-zA-Z0-9_<>\[\]]*)\s+([a-z_][a-zA-Z0-9_]*)\s+in\b/gm;
 
@@ -153,6 +154,7 @@ class CSharpProvider extends LogProvider {
         insertLine,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
@@ -172,6 +174,7 @@ class CSharpProvider extends LogProvider {
         insertLine,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
@@ -182,7 +185,13 @@ class CSharpProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = this.getLogStatement(op.varName, op.indent);
+      const logStatement = await generateLogStatement(
+        document,
+        "",
+        op.varName,
+        op.indent,
+        op.declarationLine,
+      );
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -196,6 +205,7 @@ class CSharpProvider extends LogProvider {
     insertLine,
     logOperations,
     scheduled,
+    declarationLine,
   ) {
     if (this.shouldSkipVariable(varName)) return;
     if (CSHARP_KEYWORDS.has(varName)) return;
@@ -232,6 +242,7 @@ class CSharpProvider extends LogProvider {
       position: new vscode.Position(insertLine, 0),
       varName,
       indent,
+      declarationLine,
     });
   }
 

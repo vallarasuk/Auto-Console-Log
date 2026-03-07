@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const LogProvider = require("./LogProvider");
+const { generateLogStatement } = require("../extension");
 
 class PhpProvider extends LogProvider {
   async insertConsoleLogs(editor) {
@@ -9,15 +10,14 @@ class PhpProvider extends LogProvider {
     const logOperations = [];
     const scheduled = new Set();
 
-    // PHP variable assignments: $varName = value (not ==)
-    // PHP variables always start with $
+    // PHP variable assignments
     const assignmentRegex =
       /(\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*=[^=]/gm;
 
-    // PHP function parameters: function foo($a, $b = 'default', ...$rest)
+    // PHP function parameters
     const functionRegex = /function\s+\w+\s*\(([^)]*)\)\s*(?::\s*\w+\s*)?\{/gm;
 
-    // PHP foreach: foreach ($array as $key => $value) or foreach ($array as $value)
+    // PHP foreach
     const foreachRegex =
       /\bforeach\s*\(\s*\S+\s+as\s+(?:(\$[a-zA-Z_]\w*)\s*=>\s*)?(\$[a-zA-Z_]\w*)\s*\)/gm;
 
@@ -25,7 +25,7 @@ class PhpProvider extends LogProvider {
 
     // 1. Variable assignments
     while ((match = assignmentRegex.exec(code)) !== null) {
-      const varName = match[1]; // Includes $
+      const varName = match[1];
       const position = document.positionAt(match.index);
       const line = document.lineAt(position.line);
       const insertLine = line.lineNumber + 1;
@@ -37,6 +37,7 @@ class PhpProvider extends LogProvider {
         insertLine,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
@@ -52,7 +53,6 @@ class PhpProvider extends LogProvider {
       const args = argsStr
         .split(",")
         .map((arg) => {
-          // Extract $varName, ignoring type hints and defaults
           const paramMatch = arg.match(/(\$[a-zA-Z_]\w*)/);
           return paramMatch ? paramMatch[1] : null;
         })
@@ -66,6 +66,7 @@ class PhpProvider extends LogProvider {
           insertLine,
           logOperations,
           scheduled,
+          line.lineNumber,
         );
       });
     }
@@ -76,7 +77,6 @@ class PhpProvider extends LogProvider {
       const line = document.lineAt(position.line);
       const insertLine = line.lineNumber + 1;
 
-      // Key (optional)
       if (match[1]) {
         this.addOperation(
           document,
@@ -85,9 +85,9 @@ class PhpProvider extends LogProvider {
           insertLine,
           logOperations,
           scheduled,
+          line.lineNumber,
         );
       }
-      // Value
       if (match[2]) {
         this.addOperation(
           document,
@@ -96,6 +96,7 @@ class PhpProvider extends LogProvider {
           insertLine,
           logOperations,
           scheduled,
+          line.lineNumber,
         );
       }
     }
@@ -107,7 +108,13 @@ class PhpProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = this.getLogStatement(op.varName, op.indent);
+      const logStatement = await generateLogStatement(
+        document,
+        "",
+        op.varName,
+        op.indent,
+        op.declarationLine,
+      );
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -121,8 +128,8 @@ class PhpProvider extends LogProvider {
     insertLine,
     logOperations,
     scheduled,
+    declarationLine,
   ) {
-    // PHP vars start with $, skip base shouldSkipVariable for the $ prefix check
     if (!varName || varName.length <= 1) return;
     if (insertLine >= document.lineCount) return;
 
@@ -156,6 +163,7 @@ class PhpProvider extends LogProvider {
       position: new vscode.Position(insertLine, 0),
       varName,
       indent,
+      declarationLine,
     });
   }
 

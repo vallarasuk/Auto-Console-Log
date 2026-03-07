@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const LogProvider = require("./LogProvider");
+const { generateLogStatement } = require("../extension");
 
 // C++ keywords that should never be treated as variable names
 const CPP_KEYWORDS = new Set([
@@ -81,6 +82,7 @@ const CPP_KEYWORDS = new Set([
   "thread_local",
   "throw",
   "true",
+  "false",
   "try",
   "typedef",
   "typeid",
@@ -123,9 +125,7 @@ class CppProvider extends LogProvider {
     const logOperations = [];
     const scheduled = new Set();
 
-    // Match typed declarations: Type varName = ... or auto varName = ...
-    // Handles: int x = 10; auto y = ...; std::string z = ...; const int w = ...
-    // IMPORTANT: Negative lookahead (?!\s*\() excludes function declarations like int add(...)
+    // Match typed declarations
     const typedDeclRegex =
       /^\s*(?:(?:const|static|volatile|mutable|inline|extern|register|thread_local)\s+)*(?:auto|(?:unsigned\s+|signed\s+)?(?:int|long|short|char|float|double|bool|wchar_t|size_t)|(?:[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*(?:<[^>]*>)?(?:\s*\*+|\s*&+)?))\s+([a-zA-Z_]\w*)(?!\s*\()\s*(?:=|{|;)/gm;
 
@@ -146,6 +146,7 @@ class CppProvider extends LogProvider {
         insertLine,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
@@ -156,7 +157,13 @@ class CppProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = this.getLogStatement(op.varName, op.indent);
+      const logStatement = await generateLogStatement(
+        document,
+        "",
+        op.varName,
+        op.indent,
+        op.declarationLine,
+      );
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -170,6 +177,7 @@ class CppProvider extends LogProvider {
     insertLine,
     logOperations,
     scheduled,
+    declarationLine,
   ) {
     if (this.shouldSkipVariable(varName)) return;
     if (CPP_KEYWORDS.has(varName)) return;
@@ -205,6 +213,7 @@ class CppProvider extends LogProvider {
       position: new vscode.Position(insertLine, 0),
       varName,
       indent,
+      declarationLine,
     });
   }
 

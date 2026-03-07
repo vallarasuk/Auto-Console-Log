@@ -198,39 +198,6 @@ function activate(context) {
   // Auto-disable conflicting keybindings on first install/activation
   autoDisableConflictingKeybindings(context);
 
-  /*
-  // Initialize ExtensionPay (background sync)
-  extpay.startBackground(context);
-
-  // Check user status to show Upgrade button if free
-  extpay.getUser().then((user) => {
-    const isDev =
-      process.env.USER === "vallarasu" ||
-      process.env.USERNAME === "vallarasu" ||
-      process.env.AUTO_CONSOLE_LOG_DEV === "true";
-    if (!user.paid && !isDev) {
-      const statusBarItem = vscode.window.createStatusBarItem(
-        vscode.StatusBarAlignment.Right,
-        100,
-      );
-      statusBarItem.text = "$(heart) Upgrade Logger Pro";
-      statusBarItem.tooltip = "Support the developer & unlock Pro features";
-      statusBarItem.command = "extension.openPaymentPage";
-      statusBarItem.show();
-      context.subscriptions.push(statusBarItem);
-    }
-  });
-  */
-
-  /*
-  // Command to open payment page
-  context.subscriptions.push(
-    vscode.commands.registerCommand("extension.openPaymentPage", () => {
-      extpay.openPaymentPage();
-    }),
-  );
-  */
-
   // Command to remove all console logs
   context.subscriptions.push(
     vscode.commands.registerCommand("extension.removeConsoleLogs", () => {
@@ -394,8 +361,6 @@ function activate(context) {
       let lineText = document.lineAt(selectionEndLine).text;
 
       // Determine if we should insert BEFORE or AFTER the current line
-      // Terminal statements: if we log a variable in a return, we want the log BEFORE the return
-      // We check if the line contains a terminal keyword that is NOT preceded by a word character (like a property name)
       const isTerminalStatement =
         /(?:^|\s|;|{)(return|throw|break|continue)\b/.test(lineText);
 
@@ -522,17 +487,14 @@ function activate(context) {
       }
 
       let logStatement = "";
-      if (typeof provider.getLogStatement === "function") {
-        logStatement = provider.getLogStatement(varName, indent);
-      } else {
-        // Fallback for JS/TS which uses the robust generateLogStatement
-        logStatement = await generateLogStatement(
-          document,
-          "",
-          varName,
-          indent,
-        );
-      }
+      // Pass the actual line where variable is defined
+      logStatement = await generateLogStatement(
+        document,
+        "",
+        varName,
+        indent,
+        selection.start.line,
+      );
 
       const edit = new vscode.WorkspaceEdit();
       edit.insert(
@@ -564,14 +526,13 @@ function activate(context) {
     ),
   );
 
-  // Command to manually re-patch keybindings (useful if user resets their keybindings.json)
+  // Command to manually re-patch keybindings
   context.subscriptions.push(
     vscode.commands.registerCommand("extension.fixKeybindingConflicts", () => {
-      // Reset the patched flag so it runs again
       context.globalState.update("acl.keybindingsPatched.v1", false);
       autoDisableConflictingKeybindings(context);
       vscode.window.showInformationMessage(
-        "✅ Auto Console Log: Keybinding conflicts resolved. Restart VS Code if shortcuts still don't work.",
+        "✅ Auto Console Log: Keybinding conflicts resolved.",
       );
     }),
   );
@@ -579,12 +540,25 @@ function activate(context) {
 
 // ─── Log Statement Generator ─────────────────────────────────────────────────
 
-async function generateLogStatement(document, contextName, varName, indent) {
+async function generateLogStatement(
+  document,
+  contextName,
+  varName,
+  indent,
+  lineNumber,
+) {
   const config = vscode.workspace.getConfiguration(
     "autoConsoleLogByVallarasuKanthasamy",
   );
   const logLevel = config.get("logLevel") || "info";
   const proConfig = config.get("pro") || {};
+
+  const emoji = config.get("logMessageEmoji") || "";
+  const prefix = config.get("logMessagePrefix") || "";
+  const includeFileName = config.get("includeFileName") || false;
+  const includeLineNumber = config.get("includeLineNumber") || false;
+  const delimiter =
+    config.get("delimiter") || " ----------------------------->";
 
   // Clean varName for use inside a single-line string literal
   const safeVarName = varName
@@ -592,72 +566,50 @@ async function generateLogStatement(document, contextName, varName, indent) {
     .replace(/'/g, "\\'")
     .replace(/"/g, '\\"');
 
-  // Check Pro status
-  let isPro = true; // Temporary allow all users to use Pro features
-  /*
-  try {
-    const user = await extpay.getUser();
-    isPro = user.paid;
-  } catch {
-    // ignore
-  }
-
-  // Developer Bypass
-  if (
-    process.env.USER === "vallarasu" ||
-    process.env.USERNAME === "vallarasu" ||
-    process.env.AUTO_CONSOLE_LOG_DEV === "true"
-  ) {
-    isPro = true;
-  }
-  */
-
   const suffix = " // [ACL]\n";
 
-  if (isPro) {
-    // 1. Remote Logging
-    if (proConfig.remoteLogUrl && proConfig.remoteLogUrl.trim() !== "") {
-      const url = proConfig.remoteLogUrl.trim();
-      const payload = `{
+  if (proConfig.remoteLogUrl && proConfig.remoteLogUrl.trim() !== "") {
+    const url = proConfig.remoteLogUrl.trim();
+    const payload = `{
     file: "${document.fileName.replace(/\\/g, "\\\\\\\\")}",
     line: ${contextName ? '"' + contextName + '"' : "null"},
     var: "${safeVarName}",
     value: ${varName},
     timestamp: new Date().toISOString()
 }`;
-      return `${indent}fetch('${url}', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(${payload}) }).catch(()=>{});${suffix}`;
-    }
-
-    // 2. Custom Templates
-    if (proConfig.logTemplate && proConfig.logTemplate.trim() !== "") {
-      let template = proConfig.logTemplate;
-      // We pass the unescaped varName here to keep compatibility, or just safeVarName?
-      // For custom templates it's safer to use the one without newlines, but we shouldn't add escape chars
-      // since we don't know the context (console.log vs backticks).
-      const templateVarName = varName.replace(/\r?\n|\r/g, " ");
-      template = template.replace(/{varName}/g, templateVarName);
-      template = template.replace(/{file}/g, document.fileName);
-      template = template.replace(
-        /{context}/g,
-        contextName ? contextName.replace(/ > $/, "") : "",
-      );
-      return `${indent}${template};${suffix}`;
-    }
+    return `${indent}fetch('${url}', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(${payload}) }).catch(()=>{});${suffix}`;
   }
+
+  // Check if context should be shown
+  const showContext = config.get("showContext") !== false;
+  const finalContextName = showContext ? contextName : "";
+
+  // Build the rich label
+  let fileLineInfo = "";
+  if (includeFileName || includeLineNumber) {
+    const parts = [];
+    if (includeFileName) parts.push(path.basename(document.fileName));
+    if (includeLineNumber && lineNumber !== undefined)
+      parts.push(lineNumber + 1);
+    fileLineInfo = `[${parts.join(":")}] `;
+  }
+
+  const label = `${emoji}${prefix}${fileLineInfo}${finalContextName}${safeVarName}${delimiter}`;
 
   // Default Behavior
   const method = ["warn", "error"].includes(logLevel) ? logLevel : "log";
-  // Only needs single-quote escape since we use single-quote wrapping
-  const labelVarName = varName.replace(/\r?\n|\r/g, " ").replace(/'/g, "\\'");
-  return `${indent}console.${method}('${contextName}${labelVarName} ----------------------------->',  ${varName});${suffix}`;
+  return `${indent}console.${method}('${label.replace(
+    /'/g,
+    "\\'",
+  )}',  ${varName});${suffix}`;
 }
 
 function deactivate() {
-  // Clean up our keybinding patches when extension is uninstalled/disabled
   removeConflictingKeybindingPatches();
 }
 
 module.exports = {
   activate,
   deactivate,
+  generateLogStatement,
 };
