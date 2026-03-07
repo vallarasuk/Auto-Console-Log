@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const LogProvider = require("./LogProvider");
+const { generateLogStatement } = require("../extension");
 
 class SwiftProvider extends LogProvider {
   /**
@@ -13,7 +14,6 @@ class SwiftProvider extends LogProvider {
     const scheduled = new Set();
 
     // Swift: var x = ..., let x = ..., var x: Type = ..., let x: Type = ...
-    // Also handles: var x: Type (without assignment, e.g. stored properties)
     const declRegex =
       /^\s*(?:(?:private|public|internal|fileprivate|open|static|class|lazy|weak|unowned|override|final|mutating|nonmutating)\s+)*(?:var|let)\s+([a-zA-Z_]\w*)(?:\s*:\s*[^=\n{]+?)?\s*(?:=|{)/gm;
 
@@ -39,6 +39,7 @@ class SwiftProvider extends LogProvider {
         insertLine,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
@@ -56,6 +57,7 @@ class SwiftProvider extends LogProvider {
         insertLine,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
@@ -73,6 +75,7 @@ class SwiftProvider extends LogProvider {
         insertLine,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
@@ -85,8 +88,13 @@ class SwiftProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      // Swift string interpolation: \(varName)
-      const logStatement = this.getLogStatement(op.varName, op.indent);
+      const logStatement = await generateLogStatement(
+        document,
+        "",
+        op.varName,
+        op.indent,
+        op.declarationLine,
+      );
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -100,6 +108,7 @@ class SwiftProvider extends LogProvider {
     insertLine,
     logOperations,
     scheduled,
+    declarationLine,
   ) {
     if (this.shouldSkipVariable(varName)) return;
     if (insertLine >= document.lineCount) return;
@@ -134,6 +143,7 @@ class SwiftProvider extends LogProvider {
       position: new vscode.Position(insertLine, 0),
       varName,
       indent,
+      declarationLine,
     });
   }
 

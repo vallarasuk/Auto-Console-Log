@@ -124,6 +124,7 @@ class JsTsProvider extends LogProvider {
                 contextName,
                 varName,
                 indent,
+                declarationLine: endLineIndex,
               });
             });
           });
@@ -142,6 +143,7 @@ class JsTsProvider extends LogProvider {
         op.contextName,
         op.varName,
         op.indent,
+        op.declarationLine,
       );
 
       // If we are inserting at a column (same-line terminal statement),

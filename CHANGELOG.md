@@ -6,12 +6,20 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
-## [0.5.9] – 2026-03-05
+## [0.5.9] – 2026-03-07
 
-### Fixed
+### Added
 
-- 🚀 **Advanced Multiline Detection:** "Add Console Log for Selection" now identifies the true end of complex multiline statements, including those using continuation operators (`=`, `+`, `&&`, etc.) and Python's backslash (`\`) continuation.
-- 🧹 **Test Consolidation:** Cleaned up and consolidated test reproduction files.
+- 🎨 **Rich Logging Support:** Introduced emojis, custom prefixes, file names, line numbers, and custom delimiters for more readable and professional logs.
+- 🌍 **Enhanced Multi-Language Support:** Extended advanced logging features to **C#, Python, Java, Go, PHP, C++, and Swift**.
+- ⌨️ **Keybinding Conflict Auto-Resolution:** Automatically detects and disables built-in or third-party keybinding conflicts on installation.
+- 🔧 **"Fix Keybinding Conflicts" Command:** Manually re-apply conflict resolution if needed via the Command Palette.
+
+### Changed
+
+- 🏗 **Centralized Log Generation:** Refactored all language providers to use a unified `generateLogStatement` engine for consistency.
+- 🚀 **Advanced Multiline Detection:** "Add Console Log for Selection" now identifies the true end of complex multiline statements across all languages.
+
 
 ---
 

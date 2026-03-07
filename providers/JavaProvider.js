@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const LogProvider = require("./LogProvider");
+const { generateLogStatement } = require("../extension");
 
 // Java keywords that should never be treated as variable names
 const JAVA_KEYWORDS = new Set([
@@ -90,17 +91,15 @@ class JavaProvider extends LogProvider {
     const scheduled = new Set();
 
     // Match typed declarations: Type varName = ...  or  Type varName;
-    // Handles primitives (int, long, double, float, boolean, char, byte, short)
-    // and class types (String, List<T>, etc.) with optional modifiers.
     const typedDeclRegex =
       /^\s*(?:(?:final|static|private|public|protected|volatile|transient|synchronized|native|strictfp)\s+)*(?:(?:int|long|short|byte|float|double|boolean|char)|(?:[A-Z][a-zA-Z0-9_]*(?:<[^>]*>)?(?:\[\])*))\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:=|;)/gm;
 
-    // Also catch simple reassignments: varName = value; (not ==, !=, <=, >=, +=, etc.)
+    // Also catch simple reassignments: varName = value;
     const reassignRegex = /^\s*([a-z_][a-zA-Z0-9_]*)\s*=(?![=><])/gm;
 
     let match;
 
-    // 1. Typed declarations (most reliable)
+    // 1. Typed declarations
     while ((match = typedDeclRegex.exec(code)) !== null) {
       const varName = match[1];
       if (JAVA_KEYWORDS.has(varName)) continue;
@@ -116,10 +115,11 @@ class JavaProvider extends LogProvider {
         insertLine,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
-    // 2. Reassignments (only if not already scheduled)
+    // 2. Reassignments
     while ((match = reassignRegex.exec(code)) !== null) {
       const varName = match[1];
       if (JAVA_KEYWORDS.has(varName)) continue;
@@ -135,6 +135,7 @@ class JavaProvider extends LogProvider {
         insertLine,
         logOperations,
         scheduled,
+        line.lineNumber,
       );
     }
 
@@ -145,7 +146,13 @@ class JavaProvider extends LogProvider {
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = this.getLogStatement(op.varName, op.indent);
+      const logStatement = await generateLogStatement(
+        document,
+        "",
+        op.varName,
+        op.indent,
+        op.declarationLine,
+      );
       edit.insert(op.uri, op.position, logStatement);
     }
 
@@ -159,6 +166,7 @@ class JavaProvider extends LogProvider {
     insertLine,
     logOperations,
     scheduled,
+    declarationLine,
   ) {
     if (this.shouldSkipVariable(varName)) return;
     if (JAVA_KEYWORDS.has(varName)) return;
@@ -195,6 +203,7 @@ class JavaProvider extends LogProvider {
       position: new vscode.Position(insertLine, 0),
       varName,
       indent,
+      declarationLine,
     });
   }
 

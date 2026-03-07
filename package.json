@@ -115,6 +115,36 @@
           "type": "string",
           "default": "",
           "description": "URL to send logs to for remote debugging (Pro feature)."
+        },
+        "autoConsoleLogByVallarasuKanthasamy.showContext": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include the component or function name (context) in the console log label."
+        },
+        "autoConsoleLogByVallarasuKanthasamy.logMessageEmoji": {
+          "type": "string",
+          "default": "✨",
+          "description": "Emoji to prefix the log message (e.g., ✨, 🚀, 🔍)."
+        },
+        "autoConsoleLogByVallarasuKanthasamy.logMessagePrefix": {
+          "type": "string",
+          "default": "",
+          "description": "Custom prefix for the log message (e.g., '[DEBUG]')."
+        },
+        "autoConsoleLogByVallarasuKanthasamy.includeFileName": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include the file name in the log message."
+        },
+        "autoConsoleLogByVallarasuKanthasamy.includeLineNumber": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include the line number in the log message."
+        },
+        "autoConsoleLogByVallarasuKanthasamy.delimiter": {
+          "type": "string",
+          "default": " ----------------------------->",
+          "description": "Delimiter separating the label and variable name."
         }
       }
     }
