@@ -77,17 +77,8 @@ function buildDocument(filePath, content) {
 
 function buildEditor(document, cursorLine = 0, selectionText = null) {
   const selection = selectionText
-    ? {
-        isEmpty: false,
-        start: new vscodeMock.Position(cursorLine, 0),
-        end: new vscodeMock.Position(cursorLine, selectionText.length), // Crude but enough for tests
-        active: new vscodeMock.Position(cursorLine, 0),
-        getText: () => selectionText,
-      }
-    : {
-        isEmpty: true,
-        active: new vscodeMock.Position(cursorLine, 0),
-      };
+    ? new vscodeMock.Selection(new vscodeMock.Position(cursorLine, 0), new vscodeMock.Position(cursorLine, selectionText.length))
+    : new vscodeMock.Selection(new vscodeMock.Position(cursorLine, 0), new vscodeMock.Position(cursorLine, 0));
 
   const originalGetText = document.getText.bind(document);
   document.getText = (range) => {
@@ -95,7 +86,20 @@ function buildEditor(document, cursorLine = 0, selectionText = null) {
     return selectionText || "";
   };
 
-  return { document, selection, options: { tabSize: 4, insertSpaces: true } };
+  return { 
+    document, 
+    selection, 
+    selections: [selection],
+    visibleRanges: [],
+    viewColumn: 1,
+    options: { tabSize: 4, insertSpaces: true },
+    edit: async () => true,
+    insertSnippet: async () => true,
+    setDecorations: () => {},
+    revealRange: () => {},
+    show: () => {},
+    hide: () => {},
+  };
 }
 
 async function runTest(testName, filePath, languageId, options = {}) {

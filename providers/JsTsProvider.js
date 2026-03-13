@@ -127,7 +127,7 @@ class JsTsProvider extends LogProvider {
               errorRecovery: true,
           });
       } catch {
-      return null; // Fallback to heuristic
+        return false; // Fallback to heuristic
     }
 
       let bestPath = null;
@@ -143,7 +143,7 @@ class JsTsProvider extends LogProvider {
 
       if (!bestPath) return false;
 
-      // Find the statement level path
+      /** @type {any} */
       let statementPath = bestPath;
       while (statementPath && !statementPath.isStatement() && !statementPath.isDeclaration() && statementPath.parentPath) {
           statementPath = statementPath.parentPath;
