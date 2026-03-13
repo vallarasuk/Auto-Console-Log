@@ -1,19 +1,15 @@
 const vscode = require("vscode");
-// const ExtPay = require("./lib/extpay-vscode");
-const JsTsProvider = require("./providers/JsTsProvider");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-
-// // Global ExtPay instance
-// const extpay = ExtPay("auto-console-log");
+const { generateLogStatement } = require("./lib/utils");
 
 // Provider Registry
 const providers = {
-  javascript: new JsTsProvider(),
-  javascriptreact: new JsTsProvider(),
-  typescript: new JsTsProvider(),
-  typescriptreact: new JsTsProvider(),
+  javascript: new (require("./providers/JsTsProvider"))(),
+  javascriptreact: new (require("./providers/JsTsProvider"))(),
+  typescript: new (require("./providers/JsTsProvider"))(),
+  typescriptreact: new (require("./providers/JsTsProvider"))(),
   python: new (require("./providers/PythonProvider"))(),
   java: new (require("./providers/JavaProvider"))(),
   csharp: new (require("./providers/CSharpProvider"))(),
@@ -27,7 +23,6 @@ const providers = {
 
 /**
  * Returns the path to VS Code's user keybindings.json file.
- * Works on Windows, macOS, and Linux.
  */
 function getKeybindingsFilePath() {
   const home = os.homedir();
@@ -55,29 +50,17 @@ function getKeybindingsFilePath() {
   }
 }
 
-/**
- * Keybinding entries that conflict with Auto Console Log shortcuts.
- * The "command" with a "-" prefix disables that specific binding.
- *
- * Conflicts we resolve:
- *  - ctrl+l: VS Code built-in "expandLineSelection"
- *  - ctrl+l: Turbo Console Log "turboConsoleLog.addLogMessage" (if installed)
- *  - ctrl+alt+l: Some terminal/panel shortcuts
- */
 const CONFLICTING_KEYBINDINGS = [
-  // Disable VS Code built-in "Expand Line Selection" on Ctrl+L
   {
     key: "ctrl+l",
     command: "-expandLineSelection",
     _acl_managed: true,
   },
-  // Disable Turbo Console Log's Ctrl+L binding (if installed)
   {
     key: "ctrl+l",
     command: "-turboConsoleLog.addLogMessage",
     _acl_managed: true,
   },
-  // Disable any other common Ctrl+L conflicts
   {
     key: "ctrl+l",
     command: "-workbench.action.chat.openInEditor",
@@ -85,11 +68,6 @@ const CONFLICTING_KEYBINDINGS = [
   },
 ];
 
-/**
- * Reads the user's keybindings.json, injects our conflict-resolution entries
- * (if not already present), and writes it back.
- * Only runs once per install (tracked via globalState).
- */
 function autoDisableConflictingKeybindings(context) {
   const stateKey = "acl.keybindingsPatched.v1";
   const alreadyPatched = context.globalState.get(stateKey, false);
@@ -98,18 +76,15 @@ function autoDisableConflictingKeybindings(context) {
   const keybindingsPath = getKeybindingsFilePath();
 
   try {
-    // Ensure the directory exists
     const dir = path.dirname(keybindingsPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    // Read existing keybindings (or start with empty array)
     let existing = [];
     if (fs.existsSync(keybindingsPath)) {
       const raw = fs.readFileSync(keybindingsPath, "utf-8").trim();
       if (raw && raw !== "") {
-        // Strip JSON comments (VS Code allows // comments in keybindings.json)
         const stripped = raw
           .replace(/\/\/[^\n]*/g, "")
           .replace(/\/\*[\s\S]*?\*\//g, "");
@@ -117,20 +92,16 @@ function autoDisableConflictingKeybindings(context) {
           existing = JSON.parse(stripped);
           if (!Array.isArray(existing)) existing = [];
         } catch {
-          // If parse fails, back up and start fresh
           fs.writeFileSync(keybindingsPath + ".acl-backup", raw, "utf-8");
           existing = [];
         }
       }
     }
 
-    // Remove any previously injected ACL entries (for clean re-injection)
     existing = existing.filter((entry) => !entry._acl_managed);
 
-    // Add our conflict-resolution entries
     let added = 0;
     for (const entry of CONFLICTING_KEYBINDINGS) {
-      // Only add if not already present (by key+command pair)
       const alreadyExists = existing.some(
         (e) => e.key === entry.key && e.command === entry.command,
       );
@@ -146,26 +117,13 @@ function autoDisableConflictingKeybindings(context) {
         JSON.stringify(existing, null, 2),
         "utf-8",
       );
-      console.log(
-        `[Auto Console Log] Patched ${added} conflicting keybinding(s) in ${keybindingsPath}`,
-      );
     }
-
-    // Mark as patched so we don't repeat on every activation
     context.globalState.update(stateKey, true);
   } catch (err) {
-    // Non-fatal: log but don't crash the extension
-    console.warn(
-      "[Auto Console Log] Could not auto-patch keybindings:",
-      err.message,
-    );
+    console.warn("[Auto Console Log] Could not auto-patch keybindings:", err.message);
   }
 }
 
-/**
- * Removes all ACL-managed keybinding entries from the user's keybindings.json.
- * Called on extension deactivation or when user explicitly requests cleanup.
- */
 function removeConflictingKeybindingPatches() {
   const keybindingsPath = getKeybindingsFilePath();
   try {
@@ -193,12 +151,8 @@ function removeConflictingKeybindingPatches() {
 // ─── Entry Point ─────────────────────────────────────────────────────────────
 
 function activate(context) {
-  console.log("Auto Console Log Extension Activated!");
-
-  // Auto-disable conflicting keybindings on first install/activation
   autoDisableConflictingKeybindings(context);
 
-  // Command to remove all console logs
   context.subscriptions.push(
     vscode.commands.registerCommand("extension.removeConsoleLogs", () => {
       const editor = vscode.window.activeTextEditor;
@@ -209,17 +163,12 @@ function activate(context) {
       const provider = providers[languageId];
 
       if (!provider) {
-        vscode.window.showInformationMessage(
-          `Log removal not fully supported for ${languageId} yet.`,
-        );
+        vscode.window.showInformationMessage(`Log removal not fully supported for ${languageId} yet.`);
         return;
       }
 
       const edit = new vscode.WorkspaceEdit();
       const logsToRemove = [];
-
-      // Determine scope for removal
-      // Always use global scope for Remove All Console Logs
       const isGlobal = true;
       const startLine = 0;
       const endLine = document.lineCount;
@@ -235,8 +184,6 @@ function activate(context) {
           text.endsWith("<!-- [ACL] -->")
         ) {
           let startIndex = i;
-
-          // Look backward up to 20 lines to find the start of the log statement
           for (let j = i; j >= Math.max(0, i - 20); j--) {
             const prevText = document.lineAt(j).text;
             const trimmedPrev = prevText.trim();
@@ -248,7 +195,6 @@ function activate(context) {
                 trimmedPrev.endsWith("/* [ACL] */") ||
                 trimmedPrev.endsWith("<!-- [ACL] -->"))
             ) {
-              // We hit the end of an older log, so the start of THIS log must be after it
               break;
             }
 
@@ -257,15 +203,9 @@ function activate(context) {
                 prevText,
               );
 
-            if (
-              prevText.includes("----------------------------->") ||
-              isStartPattern
-            ) {
+            if (prevText.includes("----------------------------->") || isStartPattern) {
               startIndex = j;
-              // If we found the actual method call, we can stop looking backward
-              if (isStartPattern) {
-                break;
-              }
+              if (isStartPattern) break;
             }
           }
 
@@ -276,11 +216,7 @@ function activate(context) {
       }
 
       if (logsToRemove.length === 0) {
-        vscode.window.showInformationMessage(
-          isGlobal
-            ? "No auto-generated console logs found in file."
-            : "No auto-generated console logs found in current function.",
-        );
+        vscode.window.showInformationMessage("No auto-generated console logs found in file.");
         return;
       }
 
@@ -290,11 +226,7 @@ function activate(context) {
 
       vscode.workspace.applyEdit(edit).then((success) => {
         if (success) {
-          vscode.window.showInformationMessage(
-            `Removed ${logsToRemove.length} console logs${
-              isGlobal ? " (File)" : " (Scope)"
-            }.`,
-          );
+          vscode.window.showInformationMessage(`Removed ${logsToRemove.length} console logs.`);
         } else {
           vscode.window.showErrorMessage("Failed to remove console logs.");
         }
@@ -314,9 +246,7 @@ function activate(context) {
     const provider = providers[languageId];
 
     if (!provider) {
-      vscode.window.showInformationMessage(
-        `Auto Console Log not supported for ${languageId} files.`,
-      );
+      vscode.window.showInformationMessage(`Auto Console Log not supported for ${languageId} files.`);
       return;
     }
 
@@ -349,20 +279,21 @@ function activate(context) {
     const provider = providers[languageId];
 
     if (!provider) {
-      vscode.window.showInformationMessage(
-        `Auto Console Log not supported for ${languageId} files.`,
-      );
+      vscode.window.showInformationMessage(`Auto Console Log not supported for ${languageId} files.`);
       return;
     }
 
     try {
+      if (provider.insertLogForSelection) {
+        await provider.insertLogForSelection(editor, varName, generateLogStatement);
+        return;
+      }
+
       const selectionStartLine = selection.start.line;
       const selectionEndLine = selection.end.line;
       let lineText = document.lineAt(selectionEndLine).text;
 
-      // Determine if we should insert BEFORE or AFTER the current line
-      const isTerminalStatement =
-        /(?:^|\s|;|{)(return|throw|break|continue)\b/.test(lineText);
+      const isTerminalStatement = /(?:^|\s|;|{)(return|throw|break|continue)\b/.test(lineText);
 
       let insertLine;
       let indent = lineText.match(/^\s*/)?.[0] || "";
@@ -371,19 +302,10 @@ function activate(context) {
         insertLine = selectionStartLine;
       } else {
         insertLine = selectionEndLine;
-
-        // Bracket balancing heuristic to find the true end of the statement
-        let openParens = 0,
-          openBraces = 0,
-          openBrackets = 0;
+        let openParens = 0, openBraces = 0, openBrackets = 0;
 
         const processLine = (t) => {
-          // Remove string literals and basic inline comments to avoid false brackets
-          const s = t
-            .replace(/'[^']*'/g, "")
-            .replace(/"[^"]*"/g, "")
-            .replace(/\/\/.*/, "")
-            .replace(/#.*/, "");
+          const s = t.replace(/'[^']*'/g, "").replace(/"[^"]*"/g, "").replace(/\/\/.*/, "").replace(/#.*/, "");
           for (const char of s) {
             if (char === "(") openParens++;
             else if (char === ")") openParens = Math.max(0, openParens - 1);
@@ -397,219 +319,51 @@ function activate(context) {
         processLine(lineText);
 
         const isContinuation = (t) => {
-          const trimmed = t
-            .replace(/\/\/.*$/, "")
-            .replace(/#.*$/, "")
-            .replace(/\/\*.*?\*\//g, "")
-            .trim();
-          return (
-            trimmed.endsWith(",") ||
-            trimmed.endsWith("=") ||
-            trimmed.endsWith("+") ||
-            trimmed.endsWith("-") ||
-            trimmed.endsWith("*") ||
-            trimmed.endsWith("/") ||
-            trimmed.endsWith("%") ||
-            trimmed.endsWith("&") ||
-            trimmed.endsWith("|") ||
-            trimmed.endsWith("^") ||
-            trimmed.endsWith("<") ||
-            trimmed.endsWith(">") ||
-            trimmed.endsWith("?") ||
-            trimmed.endsWith(":") ||
-            trimmed.endsWith("&&") ||
-            trimmed.endsWith("||") ||
-            trimmed.endsWith("??") ||
-            trimmed.endsWith(".") ||
-            trimmed.endsWith("\\")
-          );
+          const trimmed = t.replace(/\/\/.*$/, "").replace(/#.*$/, "").replace(/\/\*.*?\*\//g, "").trim();
+          return /[,=+\-*/%&|^<>?:!]$|(&&|\|\||\?\?|\.|\/|\\)$/.test(trimmed);
         };
 
         while (
           insertLine < document.lineCount - 1 &&
-          (openParens > 0 ||
-            openBraces > 0 ||
-            openBrackets > 0 ||
-            isContinuation(lineText))
+          (openParens > 0 || openBraces > 0 || openBrackets > 0 || isContinuation(lineText))
         ) {
           insertLine++;
           lineText = document.lineAt(insertLine).text;
           processLine(lineText);
         }
-
-        // Insert at the line following the end of the statement
         insertLine++;
 
-        // Smart indent: try to inherit from the next non-empty line
-        let foundBetterIndent = false;
         let i = insertLine;
-        while (
-          i < document.lineCount &&
-          document.lineAt(i).text.trim() === ""
-        ) {
-          i++;
-        }
+        while (i < document.lineCount && document.lineAt(i).text.trim() === "") i++;
         if (i < document.lineCount) {
           const nextText = document.lineAt(i).text;
           const nextIndent = nextText.match(/^\s*/)?.[0] || "";
-          if (
-            nextIndent.length > indent.length &&
-            !/^[}\])>]/.test(nextText.trim())
-          ) {
+          if (nextIndent.length > indent.length && !/^[}\])>]/.test(nextText.trim())) {
             indent = nextIndent;
-            foundBetterIndent = true;
-          }
-        }
-
-        // If next line didn't help, check if current line opens a block
-        if (!foundBetterIndent) {
-          const cleanedLineText = lineText
-            .split("//")[0]
-            .split("/*")[0]
-            .split("#")[0]
-            .trim();
-          if (
-            cleanedLineText.endsWith("{") ||
-            cleanedLineText.endsWith("(") ||
-            cleanedLineText.endsWith("[") ||
-            cleanedLineText.endsWith(":") ||
-            cleanedLineText.endsWith("do") ||
-            cleanedLineText.endsWith("then") ||
-            cleanedLineText.endsWith("?") ||
-            cleanedLineText.match(/=>$/)
-          ) {
-            const tabSize = Number(editor.options.tabSize) || 4;
-            const insertSpaces = editor.options.insertSpaces !== false;
-            const extraIndent = insertSpaces ? " ".repeat(tabSize) : "\t";
-            indent += extraIndent;
           }
         }
       }
 
-      let logStatement = "";
-      // Pass the actual line where variable is defined
-      logStatement = await generateLogStatement(
-        document,
-        "",
-        varName,
-        indent,
-        selection.start.line,
-      );
-
+      const logStatement = await generateLogStatement(document, "", varName, indent, selection.start.line);
       const edit = new vscode.WorkspaceEdit();
-      edit.insert(
-        document.uri,
-        new vscode.Position(insertLine, 0),
-        logStatement,
-      );
-
-      const success = await vscode.workspace.applyEdit(edit);
-      if (!success) {
-        vscode.window.showErrorMessage("Failed to insert log for selection.");
-      }
+      edit.insert(document.uri, new vscode.Position(insertLine, 0), logStatement);
+      await vscode.workspace.applyEdit(edit);
     } catch (error) {
       vscode.window.showErrorMessage(`Error: ${error.message}`);
-      console.error("Extension error:", error);
     }
   };
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "extension.addConsoleLogs",
-      insertConsoleLogs,
-    ),
-  );
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "extension.addConsoleLogForSelection",
-      insertConsoleLogForSelection,
-    ),
-  );
-
-  // Command to manually re-patch keybindings
-  context.subscriptions.push(
-    vscode.commands.registerCommand("extension.fixKeybindingConflicts", () => {
-      context.globalState.update("acl.keybindingsPatched.v1", false);
-      autoDisableConflictingKeybindings(context);
-      vscode.window.showInformationMessage(
-        "✅ Auto Console Log: Keybinding conflicts resolved.",
-      );
-    }),
-  );
-}
-
-// ─── Log Statement Generator ─────────────────────────────────────────────────
-
-async function generateLogStatement(
-  document,
-  contextName,
-  varName,
-  indent,
-  lineNumber,
-) {
-  const config = vscode.workspace.getConfiguration(
-    "autoConsoleLogByVallarasuKanthasamy",
-  );
-  const logLevel = config.get("logLevel") || "info";
-  const proConfig = config.get("pro") || {};
-
-  const emoji = config.get("logMessageEmoji") || "";
-  const prefix = config.get("logMessagePrefix") || "";
-  const includeFileName = config.get("includeFileName") || false;
-  const includeLineNumber = config.get("includeLineNumber") || false;
-  const delimiter =
-    config.get("delimiter") || " ----------------------------->";
-
-  // Clean varName for use inside a single-line string literal
-  const safeVarName = varName
-    .replace(/\r?\n|\r/g, " ")
-    .replace(/'/g, "\\'")
-    .replace(/"/g, '\\"');
-
-  const suffix = " // [ACL]\n";
-
-  if (proConfig.remoteLogUrl && proConfig.remoteLogUrl.trim() !== "") {
-    const url = proConfig.remoteLogUrl.trim();
-    const payload = `{
-    file: "${document.fileName.replace(/\\/g, "\\\\\\\\")}",
-    line: ${contextName ? '"' + contextName + '"' : "null"},
-    var: "${safeVarName}",
-    value: ${varName},
-    timestamp: new Date().toISOString()
-}`;
-    return `${indent}fetch('${url}', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(${payload}) }).catch(()=>{});${suffix}`;
-  }
-
-  // Check if context should be shown
-  const showContext = config.get("showContext") !== false;
-  const finalContextName = showContext ? contextName : "";
-
-  // Build the rich label
-  let fileLineInfo = "";
-  if (includeFileName || includeLineNumber) {
-    const parts = [];
-    if (includeFileName) parts.push(path.basename(document.fileName));
-    if (includeLineNumber && lineNumber !== undefined)
-      parts.push(lineNumber + 1);
-    fileLineInfo = `[${parts.join(":")}] `;
-  }
-
-  const label = `${emoji}${prefix}${fileLineInfo}${finalContextName}${safeVarName}${delimiter}`;
-
-  // Default Behavior
-  const method = ["warn", "error"].includes(logLevel) ? logLevel : "log";
-  return `${indent}console.${method}('${label.replace(
-    /'/g,
-    "\\'",
-  )}',  ${varName});${suffix}`;
+  context.subscriptions.push(vscode.commands.registerCommand("extension.addConsoleLogs", insertConsoleLogs));
+  context.subscriptions.push(vscode.commands.registerCommand("extension.addConsoleLogForSelection", insertConsoleLogForSelection));
+  context.subscriptions.push(vscode.commands.registerCommand("extension.fixKeybindingConflicts", () => {
+    context.globalState.update("acl.keybindingsPatched.v1", false);
+    autoDisableConflictingKeybindings(context);
+    vscode.window.showInformationMessage("✅ Auto Console Log: Keybinding conflicts resolved.");
+  }));
 }
 
 function deactivate() {
   removeConflictingKeybindingPatches();
 }
 
-module.exports = {
-  activate,
-  deactivate,
-  generateLogStatement,
-};
+module.exports = { activate, deactivate };
