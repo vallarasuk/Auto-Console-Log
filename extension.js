@@ -169,7 +169,6 @@ function activate(context) {
 
       const edit = new vscode.WorkspaceEdit();
       const logsToRemove = [];
-      const isGlobal = true;
       const startLine = 0;
       const endLine = document.lineCount;
 

@@ -155,12 +155,14 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.19.37",
     "@types/vscode": "^1.110.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
-    "eslint": "^10.0.3"
+    "eslint": "^10.0.3",
+    "globals": "^17.4.0"
   },
   "dependencies": {
     "@babel/parser": "^7.29.0",

@@ -1,5 +1,3 @@
-const vscode = require("vscode");
-
 // Common keywords to skip across all languages
 const COMMON_KEYWORDS = new Set([
   // JS/TS
@@ -29,11 +27,9 @@ class LogProvider {
 
   /**
    * Insert logs for all variables in the document or selection.
-   * @param {vscode.TextEditor} editor
-   * @param {Function} generateLogStatement
    */
   async insertConsoleLogs(editor, generateLogStatement) {
-    throw new Error("Method 'insertConsoleLogs' must be implemented.");
+    throw new Error("Method 'insertConsoleLogs()' must be implemented.");
   }
 
   /**

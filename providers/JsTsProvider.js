@@ -126,9 +126,9 @@ class JsTsProvider extends LogProvider {
               plugins: ["jsx", "typescript", "classProperties", "decorators-legacy", "dynamicImport", "optionalChaining", "nullishCoalescingOperator"],
               errorRecovery: true,
           });
-      } catch (e) {
-          return false; // Fallback to heuristic
-      }
+      } catch {
+      return null; // Fallback to heuristic
+    }
 
       let bestPath = null;
       traverse(ast, {
