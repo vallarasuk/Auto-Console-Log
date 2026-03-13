@@ -1,214 +1,58 @@
 const vscode = require("vscode");
 const LogProvider = require("./LogProvider");
-const { generateLogStatement } = require("../extension");
 
-// Java keywords that should never be treated as variable names
 const JAVA_KEYWORDS = new Set([
-  "abstract",
-  "assert",
-  "boolean",
-  "break",
-  "byte",
-  "case",
-  "catch",
-  "char",
-  "class",
-  "const",
-  "continue",
-  "default",
-  "do",
-  "double",
-  "else",
-  "enum",
-  "extends",
-  "final",
-  "finally",
-  "float",
-  "for",
-  "goto",
-  "if",
-  "implements",
-  "import",
-  "instanceof",
-  "int",
-  "interface",
-  "long",
-  "native",
-  "new",
-  "package",
-  "private",
-  "protected",
-  "public",
-  "return",
-  "short",
-  "static",
-  "strictfp",
-  "super",
-  "switch",
-  "synchronized",
-  "this",
-  "throw",
-  "throws",
-  "transient",
-  "try",
-  "void",
-  "volatile",
-  "while",
-  "true",
-  "false",
-  "null",
-  "String",
-  "Object",
-  "System",
-  "Integer",
-  "Long",
-  "Double",
-  "Float",
-  "Boolean",
-  "Character",
-  "Byte",
-  "Short",
-  "Number",
-  "Math",
-  "Arrays",
-  "ArrayList",
-  "List",
-  "Map",
-  "HashMap",
-  "Set",
-  "HashSet",
+  "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if", "implements", "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "void", "volatile", "while", "true", "false", "null", "String", "Object", "System", "Integer", "Long", "Double", "Float", "Boolean", "Character", "Byte", "Short", "Number", "Math", "Arrays", "ArrayList", "List", "Map", "HashMap", "Set", "HashSet"
 ]);
 
 class JavaProvider extends LogProvider {
   /**
    * @param {vscode.TextEditor} editor
+   * @param {Function} generateLogStatement
    */
-  async insertConsoleLogs(editor) {
+  async insertConsoleLogs(editor, generateLogStatement) {
     const document = editor.document;
     const code = document.getText();
     const selection = editor.selection;
     const logOperations = [];
     const scheduled = new Set();
 
-    // Match typed declarations: Type varName = ...  or  Type varName;
-    const typedDeclRegex =
-      /^\s*(?:(?:final|static|private|public|protected|volatile|transient|synchronized|native|strictfp)\s+)*(?:(?:int|long|short|byte|float|double|boolean|char)|(?:[A-Z][a-zA-Z0-9_]*(?:<[^>]*>)?(?:\[\])*))\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:=|;)/gm;
-
-    // Also catch simple reassignments: varName = value;
+    const typedDeclRegex = /^\s*(?:(?:final|static|private|public|protected|volatile|transient|synchronized|native|strictfp)\s+)*(?:(?:int|long|short|byte|float|double|boolean|char)|(?:[A-Z][a-zA-Z0-9_]*(?:<[^>]*>)?(?:\[\])*))\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:=|;)/gm;
     const reassignRegex = /^\s*([a-z_][a-zA-Z0-9_]*)\s*=(?![=><])/gm;
 
     let match;
-
-    // 1. Typed declarations
     while ((match = typedDeclRegex.exec(code)) !== null) {
-      const varName = match[1];
-      if (JAVA_KEYWORDS.has(varName)) continue;
-
-      const position = document.positionAt(match.index);
-      const line = document.lineAt(position.line);
-      const insertLine = line.lineNumber + 1;
-
-      this.addOperation(
-        document,
-        selection,
-        varName,
-        insertLine,
-        logOperations,
-        scheduled,
-        line.lineNumber,
-      );
+      this.addOperation(document, selection, match[1], document.positionAt(match.index).line + 1, logOperations, scheduled, document.positionAt(match.index).line);
     }
-
-    // 2. Reassignments
     while ((match = reassignRegex.exec(code)) !== null) {
-      const varName = match[1];
-      if (JAVA_KEYWORDS.has(varName)) continue;
-
-      const position = document.positionAt(match.index);
-      const line = document.lineAt(position.line);
-      const insertLine = line.lineNumber + 1;
-
-      this.addOperation(
-        document,
-        selection,
-        varName,
-        insertLine,
-        logOperations,
-        scheduled,
-        line.lineNumber,
-      );
+      this.addOperation(document, selection, match[1], document.positionAt(match.index).line + 1, logOperations, scheduled, document.positionAt(match.index).line);
     }
 
-    if (logOperations.length === 0) {
-      vscode.window.showInformationMessage("No variables found to log (Java).");
-      return;
-    }
+    if (logOperations.length === 0) return;
 
     const edit = new vscode.WorkspaceEdit();
     for (const op of logOperations) {
-      const logStatement = await generateLogStatement(
-        document,
-        "",
-        op.varName,
-        op.indent,
-        op.declarationLine,
-      );
+      const logStatement = await generateLogStatement(document, "", op.varName, op.indent, op.declarationLine);
       edit.insert(op.uri, op.position, logStatement);
     }
-
     await vscode.workspace.applyEdit(edit);
   }
 
-  addOperation(
-    document,
-    selection,
-    varName,
-    insertLine,
-    logOperations,
-    scheduled,
-    declarationLine,
-  ) {
-    if (this.shouldSkipVariable(varName)) return;
-    if (JAVA_KEYWORDS.has(varName)) return;
-    if (insertLine >= document.lineCount) return;
-
-    let inScope = false;
-    if (!selection.isEmpty) {
-      const selectedText = document.getText(selection).trim();
-      if (varName === selectedText) inScope = true;
-    } else {
-      inScope = true;
-    }
-    if (!inScope) return;
+  addOperation(document, selection, varName, insertLine, logOperations, scheduled, declarationLine) {
+    if (this.shouldSkipVariable(varName) || JAVA_KEYWORDS.has(varName) || insertLine >= document.lineCount) return;
+    if (!selection.isEmpty && varName !== document.getText(selection).trim()) return;
 
     const key = `${insertLine}:${varName}`;
     if (scheduled.has(key)) return;
 
-    // Check if log already exists nearby
-    const windowSize = 3;
-    const end = Math.min(insertLine + windowSize, document.lineCount);
+    const end = Math.min(insertLine + 3, document.lineCount);
     for (let i = insertLine; i < end; i++) {
-      const lineText = document.lineAt(i).text;
-      if (lineText.includes("System.out.") && lineText.includes(varName))
-        return;
+        if (document.lineAt(i).text.includes("System.out.") && document.lineAt(i).text.includes(varName)) return;
     }
 
     scheduled.add(key);
-
-    const lineText = document.lineAt(insertLine - 1).text;
-    const indent = lineText.match(/^\s*/)?.[0] || "";
-
-    logOperations.push({
-      uri: document.uri,
-      position: new vscode.Position(insertLine, 0),
-      varName,
-      indent,
-      declarationLine,
-    });
-  }
-
-  getLogStatement(varName, indent) {
-    return `${indent}System.out.println("${varName}: " + ${varName}); // [ACL]\n`;
+    const indent = document.lineAt(insertLine - 1).text.match(/^\s*/)?.[0] || "";
+    logOperations.push({ uri: document.uri, position: new vscode.Position(insertLine, 0), varName, indent, declarationLine });
   }
 }
 
