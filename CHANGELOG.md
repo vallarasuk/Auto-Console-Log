@@ -6,6 +6,28 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.7.1] – 2026-03-13
+
+### Fixed
+
+- 📦 **Marketplace Compatibility:** Updated `engines.vscode` to `^1.110.0` to resolve publication conflicts with `@types/vscode`.
+- 🧹 **Code Cleanliness:** Resolved minor linting warnings across core provider files and improved type safety in `JsTsProvider.js`.
+- 🧪 **Test Suite Alignment:** Fully satisfied VS Code API requirements in the test runner's mock system.
+
+---
+
+## [0.7.0] – 2026-03-13
+
+### Changed
+
+- 🏗 **Architectural Refactor:** Resolved long-standing circular dependencies by centralizing shared logging logic into `lib/utils.js`.
+- 🚀 **Babel Performance Optimization:** Switched to specialized AST visitors in `JsTsProvider.js`, significantly speeding up variable detection in large JavaScript and TypeScript files.
+- 🎯 **Enhanced Selection Accuracy:** Replaced heuristic-based insertion with AST-based detection for "Add Console Log for Selection," resulting in pixel-perfect placement for complex expressions and multiline statements.
+- 🛠 **Standardized Providers:** Unified logic and method signatures across all 9+ supported languages for improved maintainability.
+- 🧪 **Stabilized Test Suite:** Resolved a critical `TypeError` that previously caused the custom test runner to fail.
+
+---
+
 ## [0.6.0] – 2026-03-07
 
 ### Added
