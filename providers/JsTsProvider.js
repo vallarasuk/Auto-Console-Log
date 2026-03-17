@@ -23,7 +23,7 @@ class JsTsProvider extends LogProvider {
         ],
         errorRecovery: true,
       });
-    } catch (e) {
+    } catch {
       vscode.window.showErrorMessage("Failed to parse file. Please fix syntax errors first.");
       return;
     }

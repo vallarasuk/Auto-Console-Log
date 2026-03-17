@@ -288,7 +288,6 @@ function activate(context) {
         return;
       }
 
-      const selectionStartLine = selection.start.line;
       const selectionEndLine = selection.end.line;
       let lineText = document.lineAt(selectionEndLine).text;
 
@@ -298,7 +297,7 @@ function activate(context) {
       let indent = lineText.match(/^\s*/)?.[0] || "";
 
       if (isTerminalStatement) {
-        insertLine = selectionStartLine;
+        insertLine = selectionEndLine; // Insert at the start of the line containing the end of selection
       } else {
         insertLine = selectionEndLine;
         let openParens = 0, openBraces = 0, openBrackets = 0;
@@ -317,18 +316,30 @@ function activate(context) {
 
         processLine(lineText);
 
-        const isContinuation = (t) => {
-          const trimmed = t.replace(/\/\/.*$/, "").replace(/#.*$/, "").replace(/\/\*.*?\*\//g, "").trim();
-          return /[,=+\-*/%&|^<>?:!]$|(&&|\|\||\?\?|\.|\/|\\)$/.test(trimmed);
+        const isLineContinuation = (currentLineText, nextLineText) => {
+          const trimmedCurrent = currentLineText.replace(/\/\/.*$/, "").replace(/#.*$/, "").replace(/\/\*.*?\*\//g, "").trim();
+          const endsWithContinuation = /[,=+\-*/%&|^<>?:!]$|(&&|\|\||\?\?|\.|\/|\\)$/.test(trimmedCurrent);
+          
+          if (endsWithContinuation) return true;
+          
+          if (nextLineText !== undefined) {
+              const trimmedNext = nextLineText.trim();
+              const startsWithContinuation = /^[.\?:]/.test(trimmedNext) || /^(&&|\|\||\?\?)/.test(trimmedNext);
+              if (startsWithContinuation) return true;
+          }
+          
+          return false;
         };
 
-        while (
-          insertLine < document.lineCount - 1 &&
-          (openParens > 0 || openBraces > 0 || openBrackets > 0 || isContinuation(lineText))
-        ) {
-          insertLine++;
-          lineText = document.lineAt(insertLine).text;
-          processLine(lineText);
+        while (insertLine < document.lineCount - 1) {
+            const nextLineText = document.lineAt(insertLine + 1).text;
+            if (openParens > 0 || openBraces > 0 || openBrackets > 0 || isLineContinuation(lineText, nextLineText)) {
+                insertLine++;
+                lineText = nextLineText;
+                processLine(lineText);
+            } else {
+                break;
+            }
         }
         insertLine++;
 

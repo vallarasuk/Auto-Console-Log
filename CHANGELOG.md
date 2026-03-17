@@ -6,6 +6,15 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.7.2] – 2026-03-17
+
+### Fixed
+
+- 🎯 **Advanced Heuristic Placement:** Significantly improved log placement for multi-line chained calls and ternary expressions. The extension now correctly identifies the absolute end of complex JavaScript/TypeScript statements across 30+ lines of code.
+- 🧹 **Code Optimization:** Removed unused variables and resolved minor linting warnings in the core extension logic for better stability.
+
+---
+
 ## [0.7.1] – 2026-03-13
 
 ### Fixed
