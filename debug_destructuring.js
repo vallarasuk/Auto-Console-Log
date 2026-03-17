@@ -17,7 +17,6 @@ traverse(ast, {
       console.log("Found VariableDeclaration");
       const declarations = path.node.declarations;
       declarations.forEach((decl) => {
-        const varsToLog = [];
         console.log("Decl ID Type:", decl.id.type);
 
         if (decl.id.type === "ObjectPattern") {

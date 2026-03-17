@@ -194,27 +194,36 @@ async function main() {
   await runTest("JS Basic", path.join(testDir, "test_js_basic.js"), "javascript", { minExpected: 3 });
   await runTest("JS Destructuring", path.join(testDir, "test_destructuring.js"), "javascriptreact", { minExpected: 1 });
   await runTest("JS Arrow Fn", path.join(testDir, "test_js_arrow.js"), "javascript", { minExpected: 2 });
+  await runTest("JS Chained Calls", path.join(testDir, "test_chained_calls.js"), "javascript", { minExpected: 1 });
+  await runTest("JS Ternary Multiline", path.join(testDir, "test_ternary_multiline.js"), "javascript", { minExpected: 1 });
 
   console.log("\n🐍 Python");
   await runTest("Python Basic", path.join(testDir, "test.py"), "python", { minExpected: 3 });
+  await runTest("Python Advanced", path.join(testDir, "test_python_advanced.py"), "python", { minExpected: 1 });
 
   console.log("\n☕ Java");
   await runTest("Java Basic", path.join(testDir, "Test.java"), "java", { minExpected: 2 });
+  await runTest("Java Advanced", path.join(testDir, "TestAdvanced.java"), "java", { minExpected: 1 });
 
   console.log("\n🔷 C#");
   await runTest("C# Basic", path.join(testDir, "test.cs"), "csharp", { minExpected: 2 });
+  await runTest("C# Advanced", path.join(testDir, "test_cs_advanced.cs"), "csharp", { minExpected: 1 });
 
   console.log("\n🐹 Go");
   await runTest("Go Basic", path.join(testDir, "test.go"), "go", { minExpected: 2 });
+  await runTest("Go Advanced", path.join(testDir, "test_go_advanced.go"), "go", { minExpected: 1 });
 
   console.log("\n🐘 PHP");
   await runTest("PHP Basic", path.join(testDir, "test.php"), "php", { minExpected: 1 });
+  await runTest("PHP Advanced", path.join(testDir, "test_php_advanced.php"), "php", { minExpected: 1 });
 
   console.log("\n⚙️  C++");
   await runTest("C++ Basic", path.join(testDir, "test.cpp"), "cpp", { minExpected: 2 });
+  await runTest("C++ Advanced", path.join(testDir, "test_cpp_advanced.cpp"), "cpp", { minExpected: 1 });
 
   console.log("\n🍎 Swift");
   await runTest("Swift Basic", path.join(testDir, "test.swift"), "swift", { minExpected: 1 });
+  await runTest("Swift Advanced", path.join(testDir, "test_swift_advanced.swift"), "swift", { minExpected: 1 });
 
   console.log("\n" + "=".repeat(60));
   console.log(`\n📊 Results: ${totalPassed} passed, ${totalFailed} failed`);

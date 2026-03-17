@@ -24,10 +24,10 @@ class Range {
     this.isEmpty = start.isEqual(end);
     this.isSingleLine = start.line === end.line;
   }
-  contains(positionOrRange) { return true; } // Mocked
+  contains(_positionOrRange) { return true; } // Mocked
   isEqual(other) { return this.start.isEqual(other.start) && this.end.isEqual(other.end); }
-  intersection(range) { return this; }
-  union(range) { return this; }
+  intersection(_range) { return this; }
+  union(_range) { return this; }
   with(start = this.start, end = this.end) { return new Range(start, end); }
 }
 
@@ -86,15 +86,19 @@ const window = {
 };
 
 const workspace = {
-  applyEdit: async (edit) => {
+  applyEdit: async (_edit) => {
     return true;
   },
   getConfiguration: () => ({
-    get: (key) => null,
+    get: (_key) => null,
   }),
 };
 
 const StatusBarAlignment = { Left: 1, Right: 2 };
+
+const commands = {
+  registerCommand: (_commandId, _handler) => ({ dispose: () => {} }),
+};
 
 module.exports = {
   Position,
@@ -104,5 +108,6 @@ module.exports = {
   WorkspaceEdit,
   window,
   workspace,
+  commands,
   StatusBarAlignment,
 };

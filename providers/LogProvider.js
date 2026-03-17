@@ -28,7 +28,7 @@ class LogProvider {
   /**
    * Insert logs for all variables in the document or selection.
    */
-  async insertConsoleLogs(editor, generateLogStatement) {
+  async insertConsoleLogs(_editor, _generateLogStatement) {
     throw new Error("Method 'insertConsoleLogs()' must be implemented.");
   }
 
