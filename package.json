@@ -152,7 +152,8 @@
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "test:unit": "NODE_PATH=./node_modules node test/test_runner.js && NODE_PATH=./node_modules node test/selection_test_runner.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -2,7 +2,7 @@ import globals from "globals";
 
 export default [
     {
-        ignores: [".vscode-test/**", "node_modules/**", ".git/**", "dist/**", "out/**"],
+        ignores: [".vscode-test/**", "node_modules/**", ".git/**", "dist/**", "out/**", "test_files/**"],
     },
     {
 
@@ -23,7 +23,7 @@ export default [
         "no-this-before-super": "warn",
         "no-undef": "warn",
         "no-unreachable": "warn",
-        "no-unused-vars": "warn",
+        "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
         "constructor-super": "warn",
         "valid-typeof": "warn",
     },
