@@ -6,6 +6,15 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.7.3] – 2026-03-25
+
+### Fixed
+
+- 🧽 **Clean Selection Logic:** "Add Console Log for Selection" now automatically strips trailing type annotations (`: number`), semicolons (`;`), and assignments (`=`) from your selection, preventing syntax errors in your logs.
+- 🎨 **Cleaner Formatting:** Removed the hardcoded semicolon at the end of generated `console.log` statements. This ensures better compatibility with projects using `semi: false` in Prettier or ESLint, while letting your existing tools handle standard formatting.
+
+---
+
 ## [0.7.2] – 2026-03-17
 
 ### Fixed
