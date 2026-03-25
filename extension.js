@@ -271,8 +271,11 @@ function activate(context) {
       return;
     }
 
-    const varName = document.getText(selection).trim();
+    let varName = document.getText(selection).trim();
     if (!varName) return;
+
+    // Clean up varName: remove trailing type annotations, semicolons, or assignments
+    varName = varName.split(/[:;=]/)[0].trim();
 
     const languageId = document.languageId;
     const provider = providers[languageId];
