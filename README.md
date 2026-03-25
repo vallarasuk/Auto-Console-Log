@@ -5,7 +5,7 @@
 
 # ⚡ Auto Console Log
 
-### *The Ultimate Productivity Suite for Efficient Debugging*
+## The Ultimate Productivity Suite for Efficient Debugging
 
 ![Version](https://img.shields.io/visual-studio-marketplace/v/vallarasuk.auto-console-log?style=flat-square&color=6366f1)
 ![Downloads](https://img.shields.io/visual-studio-marketplace/d/vallarasuk.auto-console-log?style=flat-square&color=10b981)
@@ -79,7 +79,7 @@ Go beyond simple logs with our advanced configuration options:
   <div style="display: flex; align-items: center; gap: 20px;">
     <img src="https://esobjkdsqwmmzhcwvzck.supabase.co/storage/v1/object/public/quotesimages//profile.png" width="100" style="border-radius: 50%; border: 3px solid #6366f1;" alt="Vallarasu Kanthasamy" />
     <div>
-      <h3 style="margin: 0; color: #6366f1;">Vallarasu Kanthasamy</h3>
+      <h2 style="margin: 0; color: #6366f1;">Vallarasu Kanthasamy</h2>
       <p style="margin: 5px 0 15px; opacity: 0.8;">Full-Stack Developer | Systems Architect | AI Automation Enthusiast</p>
       <div style="display: flex; gap: 10px;">
         <div class="badge-base LI-profile-badge" data-locale="en_US" data-size="large" data-theme="light" data-type="HORIZONTAL" data-vanity="vallarasu-k" data-version="v1"><a class="badge-base__link LI-simple-link" href="https://in.linkedin.com/in/vallarasu-k?trk=profile-badge">Vallarasu K</a></div>
