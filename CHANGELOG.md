@@ -6,6 +6,15 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.7.5] – 2026-03-25
+
+### Fixed
+
+- 🖼️ **Profile Picture Aspect Ratio:** Resolved an issue where the developer profile picture was appearing stretched by enforcing a 1:1 aspect ratio.
+- 🔗 **LinkedIn Badge Enhancement:** Replaced the static LinkedIn badge with the official dynamic profile badge.
+
+---
+
 ## [0.7.4] – 2026-03-25
 
 ### Changed
