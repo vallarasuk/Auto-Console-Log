@@ -26,3 +26,33 @@ node_modules/@vscode/test-electron/**
 node_modules/eslint/**
 .env
 .env.example
+
+# Exclude source files (now bundled in dist/)
+extension.js
+lib/**
+providers/**
+
+# Exclude node_modules (now bundled)
+node_modules/**
+
+# Exclude node_modules bloat
+node_modules/**/*.md
+node_modules/**/LICENSE*
+node_modules/**/Makefile
+node_modules/**/*.map
+node_modules/**/*.d.ts
+node_modules/**/*.d.cts
+node_modules/**/*.d.mts
+node_modules/**/test/**
+node_modules/**/tests/**
+node_modules/**/example/**
+node_modules/**/examples/**
+node_modules/.bin/**
+node_modules/.cache/**
+node_modules/.package-lock.json
+node_modules/.travis.yml
+node_modules/**/CHANGELOG.md
+
+# Build Artifacts
+publish.sh
+logo.png
