@@ -82,7 +82,7 @@ Go beyond simple logs with our advanced configuration options:
       <h3 style="margin: 0; color: #6366f1;">Vallarasu Kanthasamy</h3>
       <p style="margin: 5px 0 15px; opacity: 0.8;">Full-Stack Developer | Systems Architect | AI Automation Enthusiast</p>
       <div style="display: flex; gap: 10px;">
-        <a href="https://linkedin.com/in/vallarasu-kanthasamy" target="_blank"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" height="25" /></a>
+        <div class="badge-base LI-profile-badge" data-locale="en_US" data-size="large" data-theme="light" data-type="HORIZONTAL" data-vanity="vallarasu-k" data-version="v1"><a class="badge-base__link LI-simple-link" href="https://in.linkedin.com/in/vallarasu-k?trk=profile-badge">Vallarasu K</a></div>
         <a href="https://github.com/vallarasuk" target="_blank"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" height="25" /></a>
         <a href="https://www.vallarasuk.com" target="_blank"><img src="https://img.shields.io/badge/Website-6366F1?style=for-the-badge&logo=google-chrome&logoColor=white" height="25" /></a>
       </div>
@@ -114,3 +114,6 @@ Go beyond simple logs with our advanced configuration options:
   Made with ❤️ in Bangalore  
   © 2026 Vallarasu Kanthasamy
 </div>
+
+<!-- LinkedIn Badge Script -->
+<script src="https://platform.linkedin.com/badges/js/profile.js" async defer type="text/javascript"></script>
