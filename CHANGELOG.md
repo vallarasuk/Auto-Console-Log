@@ -6,6 +6,16 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.7.4] – 2026-03-25
+
+### Changed
+
+- ⚡ **README Refresh:** Completely overhauled the README with a premium, modern design aligned with the "Obsidian Architect" aesthetic.
+- 👨‍💻 **Identity Update:** Updated the developer profile to reflect latest high-impact projects (AI Automation, Torchlite, ATS Resume Maker).
+- 🔗 **Portfolio Integration:** Integrated direct links to the new Obsidian Architect portfolio and latest tech ventures.
+
+---
+
 ## [0.7.3] – 2026-03-25
 
 ### Fixed
