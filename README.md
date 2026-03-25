@@ -77,7 +77,7 @@ Go beyond simple logs with our advanced configuration options:
 
 <div style="background: #111; color: #fff; padding: 20px; border-radius: 12px; border-top: 4px solid #6366f1;">
   <div style="display: flex; align-items: center; gap: 20px;">
-    <img src="https://esobjkdsqwmmzhcwvzck.supabase.co/storage/v1/object/public/quotesimages//profile.png" width="100" style="border-radius: 50%; border: 3px solid #6366f1;" alt="Vallarasu Kanthasamy" />
+    <img src="https://esobjkdsqwmmzhcwvzck.supabase.co/storage/v1/object/public/quotesimages//profile.png" width="100" height="100" style="border-radius: 50%; border: 3px solid #6366f1; object-fit: cover;" alt="Vallarasu Kanthasamy" />
     <div>
       <h2 style="margin: 0; color: #6366f1;">Vallarasu Kanthasamy</h2>
       <p style="margin: 5px 0 15px; opacity: 0.8;">Full-Stack Developer | Systems Architect | AI Automation Enthusiast</p>
