@@ -6,6 +6,15 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.7.6] – 2026-03-30
+
+### Fixed
+
+- 🛠️ **README Marketplace Badges:** Resolved an issue where extension version and rating badges were not displaying correctly.
+- 🌍 **Open VSX Support:** Added official version badges and links for the Open VSX registry.
+
+---
+
 ## [0.7.5] – 2026-03-25
 
 ### Fixed

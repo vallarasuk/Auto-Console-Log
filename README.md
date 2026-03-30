@@ -7,9 +7,10 @@
 
 ## The Ultimate Productivity Suite for Efficient Debugging
 
-![Version](https://img.shields.io/visual-studio-marketplace/v/vallarasuk.auto-console-log?style=flat-square&color=6366f1)
-![Downloads](https://img.shields.io/visual-studio-marketplace/d/vallarasuk.auto-console-log?style=flat-square&color=10b981)
-![Rating](https://img.shields.io/visual-studio-marketplace/r/vallarasuk.auto-console-log?style=flat-square&color=f59e0b)
+![Version](https://img.shields.io/visual-studio-marketplace/v/VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy?style=flat-square&color=6366f1)
+![Open VSX](https://img.shields.io/open-vsx/v/VallarasuKanthasamy/auto-console-log-by-vallarasu-kanthasamy?style=flat-square&color=6366f1)
+![Downloads](https://img.shields.io/visual-studio-marketplace/d/VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy?style=flat-square&color=10b981)
+![Rating](https://img.shields.io/visual-studio-marketplace/r/VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy?style=flat-square&color=f59e0b)
 ![Built with](https://img.shields.io/badge/Built%20with-JavaScript-yellow?style=flat-square&logo=javascript)
 ![License](https://img.shields.io/badge/License-MIT-gray?style=flat-square)
 
@@ -107,7 +108,7 @@ Go beyond simple logs with our advanced configuration options:
 
 - 💬 **Join the Community:** [WhatsApp Group](https://chat.whatsapp.com/JzCFT47gI6aE8O6mJA96V0)
 - 🐛 **Report a Bug:** [GitHub Issues](https://github.com/vallarasuk/Auto-Console-Log/issues)
-- ⭐ **Love it?** Leave a review on the [Marketplace](https://marketplace.visualstudio.com/items?itemName=vallarasuk.auto-console-log).
+- ⭐ **Love it?** Leave a review on the [Marketplace](https://marketplace.visualstudio.com/items?itemName=VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy).
 
 <div align="center">
   <br/>
