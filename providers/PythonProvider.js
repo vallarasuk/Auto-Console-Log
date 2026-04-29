@@ -66,14 +66,20 @@ class PythonProvider extends LogProvider {
   }
 
   addOperation(document, selection, varName, insertLine, indent, logOperations, scheduled, declarationLine) {
-    if (this.shouldSkipVariable(varName) || insertLine >= document.lineCount) return;
+    const resolvedInsertLine = this.resolveInsertLine(document, declarationLine);
+    if (this.shouldSkipVariable(varName) || resolvedInsertLine >= document.lineCount) return;
     if (!selection.isEmpty && varName !== document.getText(selection).trim()) return;
 
-    const key = `${insertLine}:${varName}`;
-    if (scheduled.has(key) || this.hasPrintInScope(document, insertLine, varName)) return;
+    const key = `${resolvedInsertLine}:${varName}`;
+    if (
+      scheduled.has(key) ||
+      this.hasPrintInScope(document, resolvedInsertLine, varName) ||
+      this.hasNearbyLog(document, resolvedInsertLine, varName, ["print("])
+    ) return;
 
     scheduled.add(key);
-    logOperations.push({ uri: document.uri, position: new vscode.Position(insertLine, 0), varName, indent, declarationLine });
+    const resolvedIndent = this.getIndentForDeclaration(document, declarationLine, resolvedInsertLine);
+    logOperations.push({ uri: document.uri, position: new vscode.Position(resolvedInsertLine, 0), varName, indent: resolvedIndent || indent, declarationLine });
   }
 
   hasPrintInScope(document, lineNumber, varName) {

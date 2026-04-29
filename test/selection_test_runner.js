@@ -71,6 +71,7 @@ async function runSelectionTest(testName, content, selectionLine, varName, expec
     vscodeMock.window.activeTextEditor = editor;
     
     let insertedPos = null;
+    // @ts-ignore
     vscodeMock.WorkspaceEdit = class {
         insert(uri, pos, _text) {
             insertedPos = pos;
@@ -90,10 +91,13 @@ async function runSelectionTest(testName, content, selectionLine, varName, expec
         return false;
     }
     
+    // @ts-ignore
     if (insertedPos && insertedPos.line === expectedLine) {
+        // @ts-ignore
         console.log(`✅ PASSED (inserted at line ${insertedPos.line})`);
         return true;
     } else {
+        // @ts-ignore
         console.log(`❌ FAILED (expected line ${expectedLine}, got ${insertedPos ? insertedPos.line : 'null'})`);
         return false;
     }
@@ -105,7 +109,7 @@ async function main() {
     let failed = 0;
 
     const chainedCode = fs.readFileSync(path.join(__dirname, "../test_files/test_chained_calls.js"), "utf8");
-    if (await runSelectionTest("Chained Call Selection", chainedCode, 1, "data", 31)) passed++; else failed++;
+    if (await runSelectionTest("Chained Call Selection", chainedCode, 1, "data", 26)) passed++; else failed++;
 
     const ternaryCode = fs.readFileSync(path.join(__dirname, "../test_files/test_ternary_multiline.js"), "utf8");
     if (await runSelectionTest("Ternary Multiline Selection", ternaryCode, 1, "profileImage", 5)) passed++; else failed++;

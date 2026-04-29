@@ -1,120 +1,181 @@
-<!-- AUTO CONSOLE LOG BY VALLARASU KANTHASAMY -->
-<!-- A PREMIUM PRODUCTIVITY TOOL FOR MODERN DEVELOPERS -->
+# Auto Console Log
 
-<div align="center">
+Auto Console Log is a VS Code extension that inserts useful debug logs in the right place, quickly and safely, across multiple programming languages.
 
-# ⚡ Auto Console Log
+## Why this extension
 
-## The Ultimate Productivity Suite for Efficient Debugging
+- Log every detected variable in a file with one command.
+- Log only selected expressions when you want focused debugging.
+- Remove all generated logs reliably using a single marker.
+- Keep logs readable with context, emoji, delimiter, file name, and line number options.
+- Support day-to-day debugging in JavaScript, TypeScript, Python, Java, C#, Go, PHP, C++, and Swift.
 
-![Version](https://img.shields.io/visual-studio-marketplace/v/VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy?style=flat-square&color=6366f1)
-![Open VSX](https://img.shields.io/open-vsx/v/VallarasuKanthasamy/auto-console-log-by-vallarasu-kanthasamy?style=flat-square&color=6366f1)
-![Downloads](https://img.shields.io/visual-studio-marketplace/d/VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy?style=flat-square&color=10b981)
-![Rating](https://img.shields.io/visual-studio-marketplace/r/VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy?style=flat-square&color=f59e0b)
-![Built with](https://img.shields.io/badge/Built%20with-JavaScript-yellow?style=flat-square&logo=javascript)
-![License](https://img.shields.io/badge/License-MIT-gray?style=flat-square)
-
----
-
-**Stop wasting hours on manual logging.**  
-`Auto Console Log` is a high-performance VS Code extension designed to automate the most repetitive part of your workflow: **Debugging.**  
-Whether you're building complex React applications or scaling backend systems, we handle the logs so you can focus on the logic.
-
----
-
-</div>
-
-## 🚀 The "Magic" Workflow
-
-Traditional debuggers are slow. `Turbo Console Log` is manual.  
-**Auto Console Log** is instantaneous.
-
-### 💎 Precision Shortcuts
+## Shortcuts
 
 | Action | Windows / Linux | macOS |
 | :--- | :--- | :--- |
-| **Log ALL Variables in File** | `Ctrl + Alt + L` | `Cmd + Alt + L` |
-| **Log Selected Variable** | `Ctrl + L` | `Cmd + L` |
-| **Remove ALL Logs** | `Ctrl + Alt + R` | `Cmd + Alt + R` |
+| Add logs for variables in current file | `Ctrl+Alt+L` | `Cmd+Alt+L` |
+| Add log for current selection | `Ctrl+L` | `Cmd+L` |
+| Remove auto-generated logs | `Ctrl+Alt+R` | `Cmd+Alt+R` |
 
----
+## Supported languages
 
-## ✨ Key Features
+The extension provides provider-based support for:
 
-### 1. One-Shot Global Logging
+- JavaScript (`javascript`, `javascriptreact`)
+- TypeScript (`typescript`, `typescriptreact`)
+- Python (`python`)
+- Java (`java`)
+- C# (`csharp`)
+- Go (`go`)
+- PHP (`php`)
+- C++ (`cpp`)
+- Swift (`swift`)
 
-Why log variables one by one? Press `Ctrl + Alt + L` and watch as your entire file is instantly populated with intelligent, contextual console logs.
+## What gets inserted
 
-### 2. Smart Block Indentation
-Our engine analyzes your code's structure (loops, conditionals, functions) to place logs exactly where they belong, respecting your indentation and formatting.
+Generated statements are language-aware:
 
-### 3. Multi-Language Mastery
-Out-of-the-box support for:
-- ⚛️ **JavaScript / React / TypeScript** (`.js`, `.jsx`, `.ts`, `.tsx`)
-- 🐍 **Python** (`.py`)
-- ☕ **Java** (`.java`)
-- 🔷 **C#** (`.cs`)
-- 🐹 **Go** (`.go`)
-- 🐘 **PHP** (`.php`)
-- 🏗️ **C++** (`.cpp`)
-- 🍎 **Swift** (`.swift`)
+- JavaScript / TypeScript: `console.log|warn|error(...)`
+- Python: `print(...)`
+- Java: `System.out.println(...)`
+- C#: `Console.WriteLine(...)`
+- Go: `fmt.Println(...)`
+- PHP: `error_log(...)`
+- C++: `std::cout << ...`
+- Swift: `print(...)`
 
-### 4. Advanced Terminal Detection
-Logs are intelligently skipped for `return`, `throw`, and other terminal statements, ensuring your code remains functional while being debugged.
+All generated logs include an `[ACL]` marker comment so they can be removed safely.
 
----
+## Placement logic
 
-## 🛠️ Customization (Pro Features - Free for All)
+### File-wide insertion
 
-Go beyond simple logs with our advanced configuration options:
-- **Custom Templates:** Use placeholders like `{varName}`, `{line}`, `{file}`, and `{context}`.
-- **Remote Debugging:** Send your logs to an external URL for remote inspection.
-- **Log Levels:** Choose between `log`, `info`, `warn`, and `error`.
-- **Styling:** Custom emojis, prefixes, and delimiters to make your logs stand out in the terminal.
+- JS/TS uses AST parsing to find declarations (including destructuring).
+- Other languages use focused declaration patterns per provider.
+- Duplicate suppression checks nearby lines and existing `[ACL]` logs.
+- Inline terminal statements (`return`, `throw`, `break`, `continue`) are handled to avoid unreachable placement.
+- Indentation is inherited from declaration/context lines.
 
----
+### Selection insertion
 
-## 👨‍💻 Developed by the Obsidian Architect
+- JS/TS uses AST-first insertion.
+- If AST handling is not available, a robust fallback heuristic is used:
+  - Normalizes selection text before logging.
+  - Tracks multiline statements and continuation operators.
+  - Respects terminal statements and nearby indentation.
+  - Skips insertion when matching `[ACL]` log already exists nearby.
 
-<div style="background: #111; color: #fff; padding: 20px; border-radius: 12px; border-top: 4px solid #6366f1;">
-  <div style="display: flex; align-items: center; gap: 20px;">
-    <img src="https://esobjkdsqwmmzhcwvzck.supabase.co/storage/v1/object/public/quotesimages//profile.png" width="100" height="100" style="border-radius: 50%; border: 3px solid #6366f1; object-fit: cover;" alt="Vallarasu Kanthasamy" />
-    <div>
-      <h2 style="margin: 0; color: #6366f1;">Vallarasu Kanthasamy</h2>
-      <p style="margin: 5px 0 15px; opacity: 0.8;">Full-Stack Developer | Systems Architect | AI Automation Enthusiast</p>
-      <div style="display: flex; gap: 10px;">
-        <div class="badge-base LI-profile-badge" data-locale="en_US" data-size="large" data-theme="light" data-type="HORIZONTAL" data-vanity="vallarasu-k" data-version="v1"><a class="badge-base__link LI-simple-link" href="https://in.linkedin.com/in/vallarasu-k?trk=profile-badge">Vallarasu K</a></div>
-        <a href="https://github.com/vallarasuk" target="_blank"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" height="25" /></a>
-        <a href="https://www.vallarasuk.com" target="_blank"><img src="https://img.shields.io/badge/Website-6366F1?style=for-the-badge&logo=google-chrome&logoColor=white" height="25" /></a>
-      </div>
-    </div>
-  </div>
+## Settings
 
-<br/>
+Use these settings under `autoConsoleLogByVallarasuKanthasamy`:
 
-> "I build tools that bridge the gap between human creativity and systemic efficiency."
+- `enable` (boolean): Enable/disable extension behavior.
+- `logLevel` (`log` | `info` | `warn` | `error`): Affects JS/TS console method.
+- `showContext` (boolean): Include function/class context in labels when available.
+- `logMessageEmoji` (string): Prefix emoji for labels.
+- `logMessagePrefix` (string): Static label prefix.
+- `includeFileName` (boolean): Add filename in label.
+- `includeLineNumber` (boolean): Add source line number in label.
+- `delimiter` (string): Separator text in label.
+- `pro.remoteLogUrl` (string): For JS/TS, send payload to remote endpoint via `fetch`.
 
-### 🌟 Latest Ventures
-- **[Obsidian Architect Portfolio](https://www.vallarasuk.com):** A premium digital ecosystem showcase.
-- **[AI YouTube Automation:](https://github.com/vallarasuk)** Intelligent Gemini-powered community engagement tools.
-- **[Torchlite Managed:](https://github.com/vallarasuk)** Enterprise-grade Salesforce solutions.
-- **[ATS Resume Maker:](https://atsresumemaker.vallarasuk.com)** Helping developers get hired with precision-engineered resumes.
+Example `settings.json`:
 
-</div>
+```json
+{
+  "autoConsoleLogByVallarasuKanthasamy.logLevel": "warn",
+  "autoConsoleLogByVallarasuKanthasamy.showContext": true,
+  "autoConsoleLogByVallarasuKanthasamy.logMessageEmoji": "🔍 ",
+  "autoConsoleLogByVallarasuKanthasamy.logMessagePrefix": "[DEBUG] ",
+  "autoConsoleLogByVallarasuKanthasamy.includeFileName": true,
+  "autoConsoleLogByVallarasuKanthasamy.includeLineNumber": true,
+  "autoConsoleLogByVallarasuKanthasamy.delimiter": " -> ",
+  "autoConsoleLogByVallarasuKanthasamy.pro.remoteLogUrl": ""
+}
+```
 
----
+## Architecture
 
-## 🤝 Community & Support
+- `extension.js`: command registration, provider dispatch, selection fallback, removal command, keybinding conflict management.
+- `providers/`: per-language variable detection and insertion strategy.
+- `lib/utils.js`: shared statement generator and label formatting.
+- `dist/extension.js`: esbuild bundle used by VS Code runtime.
 
-- 💬 **Join the Community:** [WhatsApp Group](https://chat.whatsapp.com/JzCFT47gI6aE8O6mJA96V0)
-- 🐛 **Report a Bug:** [GitHub Issues](https://github.com/vallarasuk/Auto-Console-Log/issues)
-- ⭐ **Love it?** Leave a review on the [Marketplace](https://marketplace.visualstudio.com/items?itemName=VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy).
+## Development
 
-<div align="center">
-  <br/>
-  Made with ❤️ in Bangalore  
-  © 2026 Vallarasu Kanthasamy
-</div>
+### Prerequisites
 
-<!-- LinkedIn Badge Script -->
-<script src="https://platform.linkedin.com/badges/js/profile.js" async defer type="text/javascript"></script>
+- Node.js 20+
+- npm
+- VS Code 1.110+
+
+### Setup
+
+```bash
+npm install
+npm run compile
+```
+
+### Watch mode
+
+```bash
+npm run watch
+```
+
+### Tests
+
+```bash
+npm run test:unit
+```
+
+### Lint
+
+```bash
+npm run lint
+```
+
+### Package extension
+
+```bash
+npm run package
+```
+
+Or:
+
+```bash
+./build_vsix.sh
+```
+
+## Publish
+
+`publish.sh` supports publishing to both VS Code Marketplace and Open VSX.
+Create a local `.env` from `.env.example` and provide:
+
+- `VSCE_TOKEN`
+- `OVSX_TOKEN`
+
+Then run:
+
+```bash
+./publish.sh
+```
+
+## Known limitations
+
+- Non-JS/TS providers are regex-driven and may miss edge-case declarations.
+- Go logs use `fmt.Println(...)`; files without `fmt` import may need manual import.
+- Complex expressions selected across multiple syntax contexts may need manual adjustment.
+
+## Roadmap ideas
+
+- Deeper AST support for additional languages.
+- Code-action based insertion previews.
+- Smarter import insertion for Go and language-specific logger frameworks.
+- Per-language custom templates.
+
+## Support
+
+- Issues: [GitHub Issues](https://github.com/vallarasuk/Auto-Console-Log/issues)
+- Marketplace: [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy)
+- Open VSX: [Open VSX Extension](https://open-vsx.org/extension/VallarasuKanthasamy/auto-console-log-by-vallarasu-kanthasamy)
