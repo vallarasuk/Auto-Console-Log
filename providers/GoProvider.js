@@ -45,20 +45,22 @@ class GoProvider extends LogProvider {
   }
 
   addOperation(document, selection, varName, insertLine, logOperations, scheduled, declarationLine) {
-    if (this.shouldSkipVariable(varName) || insertLine >= document.lineCount) return;
+    const resolvedInsertLine = this.resolveInsertLine(document, declarationLine);
+    if (this.shouldSkipVariable(varName) || resolvedInsertLine >= document.lineCount) return;
     if (!selection.isEmpty && varName !== document.getText(selection).trim()) return;
 
-    const key = `${insertLine}:${varName}`;
+    const key = `${resolvedInsertLine}:${varName}`;
     if (scheduled.has(key)) return;
 
-    const end = Math.min(insertLine + 3, document.lineCount);
-    for (let i = insertLine; i < end; i++) {
+    const end = Math.min(resolvedInsertLine + 3, document.lineCount);
+    for (let i = resolvedInsertLine; i < end; i++) {
         if (document.lineAt(i).text.includes("fmt.Print") && document.lineAt(i).text.includes(varName)) return;
     }
+    if (this.hasNearbyLog(document, resolvedInsertLine, varName, ["fmt.Print"])) return;
 
     scheduled.add(key);
-    const indent = document.lineAt(insertLine - 1).text.match(/^\s*/)?.[0] || "";
-    logOperations.push({ uri: document.uri, position: new vscode.Position(insertLine, 0), varName, indent, declarationLine });
+    const indent = this.getIndentForDeclaration(document, declarationLine, resolvedInsertLine);
+    logOperations.push({ uri: document.uri, position: new vscode.Position(resolvedInsertLine, 0), varName, indent, declarationLine });
   }
 }
 

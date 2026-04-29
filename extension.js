@@ -68,6 +68,28 @@ const CONFLICTING_KEYBINDINGS = [
   },
 ];
 
+function normalizeSelectedExpression(rawText) {
+  let value = (rawText || "").trim();
+  if (!value) return "";
+  value = value
+    .replace(/\r?\n/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/[;,]+$/g, "")
+    .trim();
+  value = value.split(/\s+(?:as|is)\s+[A-Za-z_][\w<>\[\]?]*/)[0].trim();
+  return value;
+}
+
+function hasNearbyAutoLog(document, insertLine, varName) {
+  const start = Math.max(0, insertLine - 2);
+  const end = Math.min(document.lineCount - 1, insertLine + 3);
+  for (let i = start; i <= end; i++) {
+    const text = document.lineAt(i).text;
+    if (text.includes("[ACL]") && text.includes(varName)) return true;
+  }
+  return false;
+}
+
 function autoDisableConflictingKeybindings(context) {
   const stateKey = "acl.keybindingsPatched.v1";
   const alreadyPatched = context.globalState.get(stateKey, false);
@@ -271,11 +293,8 @@ function activate(context) {
       return;
     }
 
-    let varName = document.getText(selection).trim();
+    let varName = normalizeSelectedExpression(document.getText(selection));
     if (!varName) return;
-
-    // Clean up varName: remove trailing type annotations, semicolons, or assignments
-    varName = varName.split(/[:;=]/)[0].trim();
 
     const languageId = document.languageId;
     const provider = providers[languageId];
@@ -287,8 +306,12 @@ function activate(context) {
 
     try {
       if (provider.insertLogForSelection) {
-        await provider.insertLogForSelection(editor, varName, generateLogStatement);
-        return;
+        const handled = await provider.insertLogForSelection(
+          editor,
+          varName,
+          generateLogStatement,
+        );
+        if (handled) return;
       }
 
       const selectionEndLine = selection.end.line;
@@ -357,7 +380,17 @@ function activate(context) {
         }
       }
 
-      const logStatement = await generateLogStatement(document, "", varName, indent, selection.start.line);
+      if (hasNearbyAutoLog(document, insertLine, varName)) {
+        return;
+      }
+
+      const logStatement = await generateLogStatement(
+        document,
+        "",
+        varName,
+        indent,
+        selection.start.line,
+      );
       const edit = new vscode.WorkspaceEdit();
       edit.insert(document.uri, new vscode.Position(insertLine, 0), logStatement);
       await vscode.workspace.applyEdit(edit);

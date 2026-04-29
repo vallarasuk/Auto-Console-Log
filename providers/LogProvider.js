@@ -44,6 +44,32 @@ class LogProvider {
     if (["i", "j", "k", "e", "n", "m"].includes(varName)) return true;
     return false;
   }
+
+  resolveInsertLine(document, declarationLine) {
+    const lineText = document.lineAt(declarationLine).text;
+    const terminalInline = /;\s*(return|throw|break|continue)\b/.test(lineText);
+    if (terminalInline) return declarationLine;
+    return declarationLine + 1;
+  }
+
+  getIndentForDeclaration(document, declarationLine, fallbackLine) {
+    const sourceLine = Math.max(0, Math.min(fallbackLine, document.lineCount - 1));
+    const declIndent = document.lineAt(declarationLine).text.match(/^\s*/)?.[0] || "";
+    const sourceIndent = document.lineAt(sourceLine).text.match(/^\s*/)?.[0] || "";
+    return sourceIndent.length >= declIndent.length ? sourceIndent : declIndent;
+  }
+
+  hasNearbyLog(document, insertLine, varName, fragments = []) {
+    const start = Math.max(0, insertLine - 1);
+    const end = Math.min(document.lineCount - 1, insertLine + 5);
+    for (let i = start; i <= end; i++) {
+      const text = document.lineAt(i).text;
+      if (!text.includes(varName)) continue;
+      if (text.includes("[ACL]")) return true;
+      if (fragments.some((fragment) => text.includes(fragment))) return true;
+    }
+    return false;
+  }
 }
 
 module.exports = LogProvider;
