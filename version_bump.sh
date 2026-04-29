@@ -18,22 +18,37 @@ new_version=${new_version_v#v} # Remove 'v' prefix if present
 
 echo "✅ New version set to: $new_version"
 
-# 3. Make the branch into that version number
+# 3. Create and switch to version branch
 branch_name="v$new_version"
-echo "🌿 Creating and switching to branch: $branch_name"
+echo "🌿 Creating branch: $branch_name"
+
+# Ensure we are starting from main and it's up to date
+git checkout main
+git pull origin main
 
 # Check if branch already exists
 if git show-ref --verify --quiet "refs/heads/$branch_name"; then
-    echo "⚠️ Branch $branch_name already exists. Switching to it..."
-    git checkout "$branch_name"
-else
-    git checkout -b "$branch_name"
+    echo "⚠️ Branch $branch_name already exists. Deleting local branch to recreate..."
+    git branch -D "$branch_name"
 fi
+
+git checkout -b "$branch_name"
 
 # 4. Commit the version bump
 echo "💾 Committing version changes..."
 git add package.json package-lock.json
 git commit -m "chore: bump version to $new_version"
 
-echo "✨ Done! You are now on branch $branch_name with version $new_version"
-echo "🚀 Run ./publish.sh when you're ready to release."
+# 5. Merge back to main
+echo "🔄 Merging $branch_name back to main..."
+git checkout main
+git merge "$branch_name"
+
+# 6. Push to origin
+echo "⬆️ Pushing changes to origin main..."
+git push origin main
+
+# Optional: Get last version from package.json as confirmation
+final_version=$(jq -r .version package.json)
+echo "✨ Success! Version updated to $final_version, merged, and pushed to main."
+echo "🚀 You can now run ./publish.sh to release."
