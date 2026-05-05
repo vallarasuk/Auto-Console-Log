@@ -2,7 +2,7 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const { generateLogStatement } = require("./lib/utils");
+const { generateLogStatement, isLineContinuation } = require("./lib/utils");
 
 // Provider Registry
 const providers = {
@@ -342,20 +342,6 @@ function activate(context) {
 
         processLine(lineText);
 
-        const isLineContinuation = (currentLineText, nextLineText) => {
-          const trimmedCurrent = currentLineText.replace(/\/\/.*$/, "").replace(/#.*$/, "").replace(/\/\*.*?\*\//g, "").trim();
-          const endsWithContinuation = /[,=+\-*/%&|^<>?:!]$|(&&|\|\||\?\?|\.|\/|\\)$/.test(trimmedCurrent);
-          
-          if (endsWithContinuation) return true;
-          
-          if (nextLineText !== undefined) {
-              const trimmedNext = nextLineText.trim();
-              const startsWithContinuation = /^[.\?:]/.test(trimmedNext) || /^(&&|\|\||\?\?)/.test(trimmedNext);
-              if (startsWithContinuation) return true;
-          }
-          
-          return false;
-        };
 
         while (insertLine < document.lineCount - 1) {
             const nextLineText = document.lineAt(insertLine + 1).text;

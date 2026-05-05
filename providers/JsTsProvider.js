@@ -40,13 +40,13 @@ class JsTsProvider extends LogProvider {
 
           if (varsToLog.length === 0) return;
 
-          const endLineIndex = path.node.loc.end.line - 1;
+          let insertLine = this.resolveInsertLine(document, path.node.loc.end.line - 1);
+          let endLineIndex = path.node.loc.end.line - 1;
           const lineText = document.lineAt(endLineIndex).text;
           const textAfterDecl = lineText.substring(path.node.loc.end.column).trim();
 
-          let insertLine = path.node.loc.end.line;
           let insertPos = new vscode.Position(insertLine, 0);
-          let indent = lineText.match(/^\s*/)?.[0] || "";
+          let indent = document.lineAt(insertLine > 0 ? insertLine - 1 : 0).text.match(/^\s*/)?.[0] || "";
 
           const isTerminalAfter = /(?:^|\s|;|{)(return|throw|break|continue)\b/.test(textAfterDecl);
           if (isTerminalAfter) {
@@ -90,7 +90,7 @@ class JsTsProvider extends LogProvider {
               contextName,
               varName,
               indent,
-              declarationLine: endLineIndex,
+              declarationLine: path.node.loc.end.line - 1,
             });
           });
         });
@@ -151,8 +151,18 @@ class JsTsProvider extends LogProvider {
 
       if (!statementPath || !statementPath.node.loc) return false;
 
-      const endLine = statementPath.node.loc.end.line;
-      const indent = document.lineAt(statementPath.node.loc.start.line - 1).text.match(/^\s*/)?.[0] || "";
+      const endLine = this.resolveInsertLine(document, statementPath.node.loc.end.line - 1);
+      const startLineIndex = statementPath.node.loc.start.line - 1;
+      let indent = document.lineAt(startLineIndex).text.match(/^\s*/)?.[0] || "";
+
+      // Try to match indentation of the content if it's deeper
+      if (endLine > startLineIndex + 1) {
+          const contentIndent = document.lineAt(startLineIndex + 1).text.match(/^\s*/)?.[0] || "";
+          if (contentIndent.length > indent.length) {
+              indent = contentIndent;
+          }
+      }
+
       const contextName = this.getContextName(statementPath);
       
       const logStatement = await generateLogStatement(document, contextName, varName, indent, selection.start.line);
@@ -160,6 +170,7 @@ class JsTsProvider extends LogProvider {
       edit.insert(document.uri, new vscode.Position(endLine, 0), logStatement);
       return await vscode.workspace.applyEdit(edit);
   }
+
 
   collectVarsFromPattern(node, result) {
     if (!node) return;

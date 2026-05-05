@@ -6,6 +6,16 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.7.8] – 2026-05-05
+
+### Fixed
+
+- 🚀 **Robust Statement-End Detection:** Significantly improved log placement for complex, multi-line JavaScript and TypeScript statements (e.g., declarations split across lines without semicolons).
+- 🧠 **Cross-Language Continuation Tracking:** Enhanced heuristics to correctly identify statement continuations across all 9+ supported languages, including tracking of open parentheses, braces, and brackets.
+- 🎨 **Smarter Indentation:** Logs now automatically match the indentation of multi-line statement bodies for better readability and cleaner code structure.
+
+---
+
 ## [0.7.6] – 2026-03-30
 
 ### Fixed

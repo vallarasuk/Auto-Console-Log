@@ -1,3 +1,5 @@
+const { isLineContinuation } = require("../lib/utils");
+
 // Common keywords to skip across all languages
 const COMMON_KEYWORDS = new Set([
   // JS/TS
@@ -46,10 +48,41 @@ class LogProvider {
   }
 
   resolveInsertLine(document, declarationLine) {
-    const lineText = document.lineAt(declarationLine).text;
+    let currentLine = declarationLine;
+    let lineText = document.lineAt(currentLine).text;
+    
+    // Quick check for terminal inline (JS/TS)
     const terminalInline = /;\s*(return|throw|break|continue)\b/.test(lineText);
     if (terminalInline) return declarationLine;
-    return declarationLine + 1;
+
+    // Track parentheses/brackets/braces
+    let openParens = 0, openBraces = 0, openBrackets = 0;
+    const processLine = (t) => {
+        const s = t.replace(/'[^']*'/g, "").replace(/"[^"]*"/g, "").replace(/\/\/.*/, "").replace(/#.*/, "");
+        for (const char of s) {
+            if (char === "(") openParens++;
+            else if (char === ")") openParens = Math.max(0, openParens - 1);
+            else if (char === "{") openBraces++;
+            else if (char === "}") openBraces = Math.max(0, openBraces - 1);
+            else if (char === "[") openBrackets++;
+            else if (char === "]") openBrackets = Math.max(0, openBrackets - 1);
+        }
+    };
+
+    processLine(lineText);
+
+    while (currentLine < document.lineCount - 1) {
+        const nextLineText = document.lineAt(currentLine + 1).text;
+        if (openParens > 0 || openBraces > 0 || openBrackets > 0 || isLineContinuation(lineText, nextLineText)) {
+            currentLine++;
+            lineText = nextLineText;
+            processLine(lineText);
+        } else {
+            break;
+        }
+    }
+
+    return currentLine + 1;
   }
 
   getIndentForDeclaration(document, declarationLine, fallbackLine) {
