@@ -179,3 +179,15 @@ Then run:
 - Issues: [GitHub Issues](https://github.com/vallarasuk/Auto-Console-Log/issues)
 - Marketplace: [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=VallarasuKanthasamy.auto-console-log-by-vallarasu-kanthasamy)
 - Open VSX: [Open VSX Extension](https://open-vsx.org/extension/VallarasuKanthasamy/auto-console-log-by-vallarasu-kanthasamy)
+
+### Support the Developer
+
+If you find this extension helpful, consider supporting the developer!
+
+**UPI ID:** `vallarasuk143@pingpay`
+
+<p align="center">
+  <img src="assets/support_qr.png" alt="UPI QR Code" width="200" />
+  <br>
+  <em>Scan to support via UPI</em>
+</p>

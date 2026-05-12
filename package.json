@@ -64,6 +64,11 @@
         "command": "extension.fixKeybindingConflicts",
         "title": "Fix Keybinding Conflicts",
         "category": "Auto Console Log"
+      },
+      {
+        "command": "extension.supportDeveloper",
+        "title": "Support the Developer",
+        "category": "Auto Console Log"
       }
     ],
     "keybindings": [
@@ -86,6 +91,24 @@
         "when": "editorTextFocus"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "auto-console-log-support",
+          "title": "Auto Console Log Support",
+          "icon": "$(heart)"
+        }
+      ]
+    },
+    "views": {
+      "auto-console-log-support": [
+        {
+          "type": "webview",
+          "id": "acl-support-view",
+          "name": "Support Developer"
+        }
+      ]
+    },
     "configuration": {
       "type": "object",
       "title": "Auto Console Log By Vallarasu Kanthasamy",
