@@ -10,6 +10,12 @@ Auto Console Log is a VS Code extension that inserts useful debug logs in the ri
 - Keep logs readable with context, emoji, delimiter, file name, and line number options.
 - Support day-to-day debugging in JavaScript, TypeScript, Python, Java, C#, Go, PHP, C++, and Swift.
 
+## What's New in v0.7.9
+
+- ❤️ **Support the Developer:** You can now support the developer directly through a new view in the activity bar or the welcome modal.
+- 🚀 **Welcome Modal:** A friendly one-time welcome message to help you discover support options.
+- 🎨 **Enhanced Support UI:** Premium webview integration with UPI QR code for easy contributions.
+
 ## Shortcuts
 
 | Action | Windows / Linux | macOS |
