@@ -392,6 +392,183 @@ function activate(context) {
     autoDisableConflictingKeybindings(context);
     vscode.window.showInformationMessage("✅ Auto Console Log: Keybinding conflicts resolved.");
   }));
+
+  // ─── Support View ──────────────────────────────────────────────────────────
+
+  const supportProvider = new SupportViewProvider(context.extensionUri);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("acl-support-view", supportProvider)
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("extension.supportDeveloper", () => {
+      vscode.commands.executeCommand("workbench.view.extension.auto-console-log-support");
+    })
+  );
+
+  // ─── Welcome / Support Modal ────────────────────────────────────────────────
+  const supportMessageShownKey = "acl.supportMessageShown.v1";
+  const supportShown = context.globalState.get(supportMessageShownKey, false);
+
+  if (!supportShown) {
+    setTimeout(() => {
+      vscode.window
+        .showInformationMessage(
+          "Thank you for installing Auto Console Log! If you find this tool helpful, please consider supporting the developer.",
+          "Support Developer ❤️",
+          "Maybe Later"
+        )
+        .then((selection) => {
+          if (selection === "Support Developer ❤️") {
+            showSupportModal(context.extensionUri);
+          }
+          context.globalState.update(supportMessageShownKey, true);
+        });
+    }, 3000); // Delay slightly after startup
+  }
+}
+
+/**
+ * Shows a webview panel with support information and QR code.
+ */
+function showSupportModal(extensionUri) {
+  const panel = vscode.window.createWebviewPanel(
+    "aclSupportModal",
+    "Support the Developer",
+    vscode.ViewColumn.One,
+    {
+      enableScripts: true,
+      localResourceRoots: [extensionUri],
+    }
+  );
+
+  panel.webview.html = getSupportHtml(panel.webview, extensionUri);
+}
+
+/**
+ * Generates the common HTML for support view and modal.
+ */
+function getSupportHtml(webview, extensionUri) {
+  const qrUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, "assets", "support_qr.png")
+  );
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Developer</title>
+    <style>
+        body {
+            padding: 40px 20px;
+            color: var(--vscode-foreground);
+            font-family: var(--vscode-font-family);
+            background-color: var(--vscode-editor-background);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--vscode-sideBar-background);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            border: 1px solid var(--vscode-widget-border);
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            color: var(--vscode-button-background);
+        }
+        p {
+            font-size: 1rem;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        .qr-code {
+            margin: 30px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .qr-code img {
+            display: block;
+            width: 220px;
+            height: 220px;
+        }
+        .upi-id {
+            background: var(--vscode-textBlockQuote-background);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-family: var(--vscode-editor-font-family);
+            font-size: 1rem;
+            word-break: break-all;
+            margin: 15px 0;
+            border: 1px dashed var(--vscode-textSeparator-foreground);
+            color: var(--vscode-textLink-foreground);
+        }
+        .heart {
+            color: #ff4d4d;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="heart">❤️</div>
+    <h1>Support the Developer</h1>
+    <div class="container">
+        <p>Hi! I'm <b>Vallarasu Kanthasamy</b>. I hope <b>Auto Console Log</b> is saving you time!</p>
+        <p>If you'd like to support the continued development of this extension, you can donate via UPI by scanning the code below.</p>
+        
+        <div class="qr-code">
+            <img src="${qrUri}" alt="UPI QR Code">
+        </div>
+        
+        <div class="upi-id">
+            vallarasuk143@pingpay
+        </div>
+        
+        <p style="font-size: 0.8rem; opacity: 0.7;">Scan to support via UPI</p>
+    </div>
+    
+    <div class="footer">
+        Thank you for being part of the community!
+    </div>
+</body>
+</html>`;
+}
+
+class SupportViewProvider {
+  constructor(extensionUri) {
+    this._extensionUri = extensionUri;
+  }
+
+  resolveWebviewView(webviewView) {
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this._extensionUri],
+    };
+
+    webviewView.webview.html = getSupportHtml(webviewView.webview, this._extensionUri);
+  }
 }
 
 function deactivate() {
