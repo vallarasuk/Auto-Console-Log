@@ -6,6 +6,16 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.7.9] – 2026-05-12
+
+### Added
+
+- ❤️ **Support the Developer:** Added a dedicated support view and QR code for UPI donations.
+- 🚀 **Welcome Modal:** Introduced a one-time welcome message to help users discover support options.
+- 🎨 **Support Webview:** Integrated a premium support interface in the activity bar.
+
+---
+
 ## [0.7.8] – 2026-05-05
 
 ### Fixed
