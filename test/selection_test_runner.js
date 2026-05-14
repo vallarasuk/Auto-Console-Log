@@ -53,14 +53,17 @@ function buildDocument(content) {
   };
 }
 
-async function runSelectionTest(testName, content, selectionLine, varName, expectedLine) {
+async function runSelectionTest(testName, content, selectionLine, varName, expectedLine, expectedTextContains = null) {
     process.stdout.write(`  Testing ${testName}... `);
     
     const document = buildDocument(content);
+    const lineText = document.lineAt(selectionLine).text;
+    const varIndex = lineText.indexOf(varName);
     const selection = new vscodeMock.Selection(
-        new vscodeMock.Position(selectionLine, 0),
-        new vscodeMock.Position(selectionLine, varName.length)
+        new vscodeMock.Position(selectionLine, varIndex !== -1 ? varIndex : 0),
+        new vscodeMock.Position(selectionLine, (varIndex !== -1 ? varIndex : 0) + varName.length)
     );
+
     
     const editor = {
         document,
@@ -71,10 +74,12 @@ async function runSelectionTest(testName, content, selectionLine, varName, expec
     vscodeMock.window.activeTextEditor = editor;
     
     let insertedPos = null;
+    let insertedText = "";
     // @ts-ignore
     vscodeMock.WorkspaceEdit = class {
-        insert(uri, pos, _text) {
+        insert(uri, pos, text) {
             insertedPos = pos;
+            insertedText = text;
         }
     };
     
@@ -91,17 +96,22 @@ async function runSelectionTest(testName, content, selectionLine, varName, expec
         return false;
     }
     
-    // @ts-ignore
-    if (insertedPos && insertedPos.line === expectedLine) {
-        // @ts-ignore
+    const lineMatch = insertedPos && insertedPos.line === expectedLine;
+    const textMatch = !expectedTextContains || (insertedText && insertedText.includes(expectedTextContains));
+
+    if (lineMatch && textMatch) {
         console.log(`✅ PASSED (inserted at line ${insertedPos.line})`);
         return true;
     } else {
-        // @ts-ignore
-        console.log(`❌ FAILED (expected line ${expectedLine}, got ${insertedPos ? insertedPos.line : 'null'})`);
+        if (!lineMatch) {
+            console.log(`❌ FAILED (expected line ${expectedLine}, got ${insertedPos ? insertedPos.line : 'null'})`);
+        } else {
+            console.log(`❌ FAILED (text did not contain "${expectedTextContains}", got "${insertedText.trim()}")`);
+        }
         return false;
     }
 }
+
 
 async function main() {
     console.log("🚀 Selection Heuristic Test Suite\n");
@@ -113,6 +123,13 @@ async function main() {
 
     const ternaryCode = fs.readFileSync(path.join(__dirname, "../test_files/test_ternary_multiline.js"), "utf8");
     if (await runSelectionTest("Ternary Multiline Selection", ternaryCode, 1, "profileImage", 5)) passed++; else failed++;
+
+    const jsxCode = fs.readFileSync(path.join(__dirname, "../test_files/test_jsx.jsx"), "utf8");
+    if (await runSelectionTest("JSX Selection", jsxCode, 5, "name", 6, "{console.log")) passed++; else failed++;
+
+
+
+
 
     console.log(`\n📊 Results: ${passed} passed, ${failed} failed`);
     process.exit(failed === 0 ? 0 : 1);

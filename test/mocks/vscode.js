@@ -49,6 +49,9 @@ class Uri {
   static file(path) {
     return new Uri(path);
   }
+  static joinPath(base, ...parts) {
+    return new Uri(base.path + "/" + parts.join("/"));
+  }
   toString() {
     return `file://${this.path}`;
   }
@@ -74,15 +77,21 @@ const window = {
     console.error("[VSCode Error]", msg);
     return Promise.resolve();
   },
-  showInformationMessage: (msg) => {
+  showInformationMessage: (msg, ...items) => {
     console.log("[VSCode Info]", msg);
-    return Promise.resolve();
+    return Promise.resolve(items[0]);
   },
   showWarningMessage: (msg) => {
     console.warn("[VSCode Warn]", msg);
     return Promise.resolve();
   },
   activeTextEditor: null,
+  registerWebviewViewProvider: () => ({ dispose: () => {} }),
+  createWebviewPanel: () => ({
+    webview: { asWebviewUri: (uri) => uri, html: "" },
+    onDidDispose: () => ({ dispose: () => {} }),
+    dispose: () => {},
+  }),
 };
 
 const workspace = {
@@ -98,7 +107,10 @@ const StatusBarAlignment = { Left: 1, Right: 2 };
 
 const commands = {
   registerCommand: (_commandId, _handler) => ({ dispose: () => {} }),
+  executeCommand: (_commandId, ..._args) => Promise.resolve(),
 };
+
+const ViewColumn = { One: 1, Two: 2, Three: 3 };
 
 module.exports = {
   Position,
@@ -110,4 +122,6 @@ module.exports = {
   workspace,
   commands,
   StatusBarAlignment,
+  ViewColumn,
 };
+
