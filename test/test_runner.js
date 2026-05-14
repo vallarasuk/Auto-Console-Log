@@ -196,6 +196,9 @@ async function main() {
   await runTest("JS Arrow Fn", path.join(testDir, "test_js_arrow.js"), "javascript", { minExpected: 2 });
   await runTest("JS Chained Calls", path.join(testDir, "test_chained_calls.js"), "javascript", { minExpected: 1 });
   await runTest("JS Ternary Multiline", path.join(testDir, "test_ternary_multiline.js"), "javascript", { minExpected: 1 });
+  await runTest("JSX Basic", path.join(testDir, "test_jsx.jsx"), "javascriptreact", { minExpected: 3, cursorLine: 25 });
+
+
 
   console.log("\n🐍 Python");
   await runTest("Python Basic", path.join(testDir, "test.py"), "python", { minExpected: 3 });

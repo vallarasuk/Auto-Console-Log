@@ -35,64 +35,13 @@ class JsTsProvider extends LogProvider {
     traverse(ast, {
       VariableDeclaration: (path) => {
         path.node.declarations.forEach((decl) => {
-          const varsToLog = [];
-          this.collectVarsFromPattern(decl.id, varsToLog);
-
-          if (varsToLog.length === 0) return;
-
-          let insertLine = this.resolveInsertLine(document, path.node.loc.end.line - 1);
-          let endLineIndex = path.node.loc.end.line - 1;
-          const lineText = document.lineAt(endLineIndex).text;
-          const textAfterDecl = lineText.substring(path.node.loc.end.column).trim();
-
-          let insertPos = new vscode.Position(insertLine, 0);
-          let indent = document.lineAt(insertLine > 0 ? insertLine - 1 : 0).text.match(/^\s*/)?.[0] || "";
-
-          const isTerminalAfter = /(?:^|\s|;|{)(return|throw|break|continue)\b/.test(textAfterDecl);
-          if (isTerminalAfter) {
-            insertPos = new vscode.Position(endLineIndex, path.node.loc.end.column);
-          }
-
-          varsToLog.forEach((varName) => {
-            let inScope = false;
-
-            if (!selection.isEmpty) {
-              const selectedText = document.getText(selection).trim();
-              if (varName === selectedText || selectedText.includes(varName)) {
-                inScope = true;
-              }
-            } else {
-              const cursorLine = editor.selection.active.line;
-              const block = path.scope.block;
-
-              if (block.type === "Program") {
-                inScope = true;
-              } else if (block.loc) {
-                const blockStart = block.loc.start.line - 1;
-                const blockEnd = block.loc.end.line - 1;
-                if (cursorLine >= blockStart && cursorLine <= blockEnd) {
-                  inScope = true;
-                }
-              }
-            }
-
-            if (!inScope || this.shouldSkipVariable(varName)) return;
-
-            const key = `${insertLine}:${varName}`;
-            if (scheduled.has(key) || this.hasConsoleLogInScope(document, insertLine, varName)) return;
-
-            scheduled.add(key);
-            const contextName = this.getContextName(path);
-
-            logOperations.push({
-              uri: document.uri,
-              position: insertPos,
-              contextName,
-              varName,
-              indent,
-              declarationLine: path.node.loc.end.line - 1,
-            });
-          });
+          this.collectLogOps(path, decl.id, document, selection, editor, scheduled, logOperations);
+        });
+      },
+      "FunctionDeclaration|ArrowFunctionExpression|FunctionExpression|ClassMethod|ObjectMethod": (path) => {
+        const params = path.node.params || [];
+        params.forEach((param) => {
+          this.collectLogOps(path, param, document, selection, editor, scheduled, logOperations);
         });
       },
     });
@@ -103,13 +52,105 @@ class JsTsProvider extends LogProvider {
     }
 
     for (const op of logOperations) {
-      const logStatement = await generateLogStatement(document, op.contextName, op.varName, op.indent, op.declarationLine);
+      let logStatement = await generateLogStatement(
+        document,
+        op.contextName,
+        op.varName,
+        op.indent,
+        op.declarationLine
+      );
+
+      if (op.isInsideJSX) {
+        const trimmed = logStatement.trim();
+        const suffix = trimmed.endsWith(";") ? "" : ";";
+        logStatement = `${op.indent}{${trimmed}${suffix}}${op.suffix || ""}\n`;
+      }
+
       const finalLogStatement = op.position.character > 0 ? "\n" + logStatement : logStatement;
       edit.insert(op.uri, op.position, finalLogStatement);
     }
 
     await vscode.workspace.applyEdit(edit);
   }
+
+  collectLogOps(path, idNode, document, selection, editor, scheduled, logOperations) {
+    const varsToLog = [];
+    this.collectVarsFromPattern(idNode, varsToLog);
+
+    if (varsToLog.length === 0) return;
+
+    let insertLine = this.resolveInsertLine(document, path.node.loc.end.line - 1);
+    let endLineIndex = path.node.loc.end.line - 1;
+    const lineText = document.lineAt(endLineIndex).text;
+    const textAfterDecl = lineText.substring(path.node.loc.end.column).trim();
+
+    let insertPos = new vscode.Position(insertLine, 0);
+    let indent = document.lineAt(insertLine > 0 ? insertLine - 1 : 0).text.match(/^\s*/)?.[0] || "";
+
+    const isTerminalAfter = /(?:^|\s|;|{)(return|throw|break|continue)\b/.test(textAfterDecl);
+    if (isTerminalAfter) {
+      insertPos = new vscode.Position(endLineIndex, path.node.loc.end.column);
+    }
+
+    const isInsideJSX = this.isInsideJSXContext(path);
+
+    varsToLog.forEach((varName) => {
+      let inScope = false;
+
+      if (!selection.isEmpty) {
+        const selectedText = document.getText(selection).trim();
+        if (varName === selectedText || (selectedText.length > 2 && selectedText.includes(varName))) {
+          inScope = true;
+        }
+      } else {
+        const cursorLine = editor.selection.active.line;
+        let block = path.scope.block;
+        
+        if (path.isFunction()) {
+            block = path.node;
+        }
+
+        if (block.type === "Program") {
+          inScope = true;
+        } else if (block.loc) {
+          const blockStart = block.loc.start.line - 1;
+          const blockEnd = block.loc.end.line - 1;
+          if (cursorLine >= blockStart && cursorLine <= blockEnd) {
+            inScope = true;
+          }
+        }
+      }
+
+      if (!inScope || this.shouldSkipVariable(varName)) return;
+
+      const key = `${insertLine}:${varName}`;
+      if (scheduled.has(key) || this.hasConsoleLogInScope(document, insertLine, varName)) return;
+
+      scheduled.add(key);
+      const contextName = this.getContextName(path);
+
+      logOperations.push({
+        uri: document.uri,
+        position: insertPos,
+        contextName,
+        varName,
+        indent,
+        declarationLine: path.node.loc.end.line - 1,
+        isInsideJSX,
+        suffix: document.lineAt(insertLine > 0 ? insertLine - 1 : 0).text.endsWith(";") ? "" : ""
+      });
+    });
+  }
+
+  isInsideJSXContext(path) {
+    if (!path) return false;
+    const parent = path.parentPath;
+    if (parent && (parent.isJSXElement() || parent.isJSXFragment())) {
+      return true;
+    }
+    return false;
+  }
+
 
   /**
    * Enhanced selection logging using AST to find insertion point.
@@ -130,6 +171,8 @@ class JsTsProvider extends LogProvider {
         return false; // Fallback to heuristic
     }
 
+
+
       let bestPath = null;
       traverse(ast, {
           enter(path) {
@@ -145,7 +188,9 @@ class JsTsProvider extends LogProvider {
 
       /** @type {any} */
       let statementPath = bestPath;
-      while (statementPath && !statementPath.isStatement() && !statementPath.isDeclaration() && statementPath.parentPath) {
+      while (statementPath && !statementPath.isStatement() && !statementPath.isDeclaration() && 
+             !statementPath.isJSXElement() && !statementPath.isJSXFragment() && !statementPath.isJSXExpressionContainer() &&
+             statementPath.parentPath) {
           statementPath = statementPath.parentPath;
       }
 
@@ -153,6 +198,8 @@ class JsTsProvider extends LogProvider {
 
       const endLine = this.resolveInsertLine(document, statementPath.node.loc.end.line - 1);
       const startLineIndex = statementPath.node.loc.start.line - 1;
+
+
       let indent = document.lineAt(startLineIndex).text.match(/^\s*/)?.[0] || "";
 
       // Try to match indentation of the content if it's deeper
@@ -164,12 +211,21 @@ class JsTsProvider extends LogProvider {
       }
 
       const contextName = this.getContextName(statementPath);
+      const isInsideJSX = this.isInsideJSXContext(statementPath);
       
-      const logStatement = await generateLogStatement(document, contextName, varName, indent, selection.start.line);
+      let logStatement = await generateLogStatement(document, contextName, varName, indent, selection.start.line);
+      
+      if (isInsideJSX) {
+        const trimmed = logStatement.trim();
+        const suffix = trimmed.endsWith(";") ? "" : ";";
+        logStatement = `${indent}{${trimmed}${suffix}}\n`;
+      }
+
       const edit = new vscode.WorkspaceEdit();
       edit.insert(document.uri, new vscode.Position(endLine, 0), logStatement);
       return await vscode.workspace.applyEdit(edit);
   }
+
 
 
   collectVarsFromPattern(node, result) {
