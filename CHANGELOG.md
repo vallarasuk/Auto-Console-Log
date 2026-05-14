@@ -6,6 +6,23 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.8.0] – 2026-05-14
+
+### Added
+
+- ⚛️ **Advanced JSX Support:** Automatically wraps console logs in `{ }` when inserted directly into JSX contexts (e.g., as siblings of tags), ensuring valid React syntax.
+- 📥 **Function Parameter Logging:** The extension now identifies and logs parameters from function declarations, arrow functions, class methods, and object methods.
+- 🧪 **Expanded Test Suite:** Added a dedicated JSX test suite and improved selection-based heuristic tests to ensure 100% accuracy in modern development environments.
+
+### Fixed
+
+- 🎯 **Precise Placement Heuristics:** Improved `resolveInsertLine` and `isLineContinuation` logic to correctly handle JSX tags (`<`, `>`), preventing logs from being trapped inside multiline tags.
+- 🧹 **Test Stability:** Resolved `TypeError` during extension activation in tests by providing comprehensive mocks for VS Code webview and command APIs.
+- 📦 **Clean Package:** Updated `.gitignore` to exclude build artifacts and environment files properly.
+
+---
+
+
 ## [0.7.9] – 2026-05-12
 
 ### Added
