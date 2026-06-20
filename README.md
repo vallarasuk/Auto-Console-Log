@@ -1,14 +1,19 @@
-# Auto Console Log
+<p align="center">
+  <img src="assets/banner.png" alt="Auto Console Log Banner" width="100%" />
+</p>
 
-Auto Console Log is a VS Code extension that inserts useful debug logs in the right place, quickly and safely, across multiple programming languages.
+# Auto Console Log 🚀
 
-## Why this extension
+**Auto Console Log** is a powerful, modern VS Code extension that injects useful debug logs exactly where you need them, instantly and safely, across multiple programming languages.
 
-- Log every detected variable in a file with one command.
-- Log only selected expressions when you want focused debugging.
-- Remove all generated logs reliably using a single marker.
-- Keep logs readable with context, emoji, delimiter, file name, and line number options.
-- Support day-to-day debugging in JavaScript, TypeScript, Python, Java, C#, Go, PHP, C++, and Swift.
+## 🌟 Why this extension?
+
+- ⚡ **Lightbulb Code Actions & Context Menus** for frictionless logging.
+- 🎯 Log every detected variable in a file with one command.
+- 🔍 Log only selected expressions when you want focused debugging.
+- 🧹 Remove all generated logs reliably using a single marker.
+- 🎨 Keep logs readable with context, emoji, delimiter, file name, and line number options.
+- 🌐 Support day-to-day debugging in JavaScript, TypeScript, Python, Java, C#, Go, PHP, C++, and Swift.
 
 ## What's New in v0.8.0
 
@@ -18,13 +23,13 @@ Auto Console Log is a VS Code extension that inserts useful debug logs in the ri
 - 🧪 **Robust Testing:** Expanded test suite for JSX and improved selection-based insertion accuracy.
 
 
-## Shortcuts
+## ⚡ Features & Shortcuts
 
-| Action | Windows / Linux | macOS |
-| :--- | :--- | :--- |
-| Add logs for variables in current file | `Ctrl+Alt+L` | `Cmd+Alt+L` |
-| Add log for current selection | `Ctrl+L` | `Cmd+L` |
-| Remove auto-generated logs | `Ctrl+Alt+R` | `Cmd+Alt+R` |
+| Action | Windows / Linux | macOS | Alternative |
+| :--- | :--- | :--- | :--- |
+| Add logs for variables in current file | `Ctrl+Alt+L` | `Cmd+Alt+L` | |
+| Add log for current selection | `Ctrl+L` | `Cmd+L` | **Right-Click** → Add Console Log, or **Lightbulb** Quick Fix |
+| Remove auto-generated logs | `Ctrl+Alt+R` | `Cmd+Alt+R` | **Right-Click** → Remove All Console Logs |
 
 ## Supported languages
 
