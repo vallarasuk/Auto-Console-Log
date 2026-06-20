@@ -6,6 +6,18 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.8.1] – 2026-06-20
+
+### Added
+
+- 💡 **Code Actions (Lightbulbs):** Added a `CodeActionProvider` so you can instantly insert a console log for a selected or hovered variable using the lightbulb quick fix, without needing to memorize shortcuts.
+- 🖱️ **Context Menu Support:** Added "Add Console Log" and "Remove All Console Logs" options directly to the right-click editor context menu for frictionless logging.
+- 🎨 **Enhanced Details Tab:** Updated the README with a sleek, modern banner image and improved typography to give the extension a premium look.
+
+### Fixed
+
+- 🛠️ **Keybinding Conflicts handling:** Ensured the internal logic for managing keybinding conflicts remains robust without accidentally interfering with core VS Code behaviors.
+
 ## [0.8.0] – 2026-05-14
 
 ### Added

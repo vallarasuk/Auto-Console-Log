@@ -426,6 +426,52 @@ function activate(context) {
         });
     }, 3000); // Delay slightly after startup
   }
+
+  // ─── Code Action Provider ──────────────────────────────────────────────────
+  class AutoConsoleLogActionProvider {
+    provideCodeActions(document, range, context, token) {
+      let varName = "";
+      if (range.isEmpty) {
+        const wordRange = document.getWordRangeAtPosition(range.start);
+        if (wordRange) {
+          varName = document.getText(wordRange);
+        }
+      } else {
+        varName = document.getText(range);
+      }
+
+      varName = normalizeSelectedExpression(varName);
+
+      if (!varName || varName.length === 0) return [];
+
+      const action = new vscode.CodeAction(`Add Console Log for '${varName}'`, vscode.CodeActionKind.QuickFix);
+      action.command = {
+        command: "extension.addConsoleLogForSelection",
+        title: "Add Console Log"
+      };
+
+      const removeAction = new vscode.CodeAction(`Remove All Console Logs`, vscode.CodeActionKind.QuickFix);
+      removeAction.command = {
+        command: "extension.removeConsoleLogs",
+        title: "Remove All Console Logs"
+      };
+
+      return [action, removeAction];
+    }
+  }
+
+  const supportedLanguages = [
+    "javascript", "javascriptreact", "typescript", "typescriptreact",
+    "python", "java", "csharp", "go", "php", "cpp", "swift"
+  ];
+
+  context.subscriptions.push(
+    vscode.languages.registerCodeActionsProvider(
+      supportedLanguages.map(lang => ({ language: lang })),
+      new AutoConsoleLogActionProvider(),
+      { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }
+    )
+  );
 }
 
 /**
